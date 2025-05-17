@@ -1,57 +1,66 @@
 import React from 'react';
-import './App.css';
-import './styles/colors.css'
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import { AuthProvider } from './context/AuthContext';
+import CreateAccountPage from './pages/CreateAccount';
+import AccountPage from './pages/Account';
+import Loader from './components/Loader';
+// import { AccountPage } from "./pages/Account"
 
-const App: React.FC = () => {
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Здесь будет логика входа
-    console.log('Форма отправлена');
-  };
+import { useAuth } from './context/AuthContext';
+import CoursePage from './pages/Course';
+import LessonPage from './pages/Lesson';
 
-  return (
-    <div className="app-container">
-      <div className="left-section">
-        <div className="content">
-          <h1 className="title">ChalkHub</h1>
-          <p className="subtitle">
-            Современная система управления образовательными курсами для преподавателей и студентов
-          </p>
-          <div className="features">
-            <p>✓ Простое создание и управление курсами</p>
-            <p>✓ Удобное взаимодействие с учащимися</p>
-            <p>✓ Аналитика успеваемости</p>
-          </div>
-        </div>
-      </div>
-      <div className="right-section">
-        <form className="login-form" onSubmit={handleSubmit}>
-          <h2>Вход</h2>
-          <div className="form-group">
-            <input
-              type="email"
-              id="email"
-              placeholder="Введите email"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <input
-              type="password"
-              id="password"
-              placeholder="Введите пароль"
-              required
-            />
-          </div>
-          <button type="submit" className="login-button">Войти</button>
-          <div className="links">
-            <a href="/forgot-password">Забыли пароль?</a>
-            <a href="/register">Регистрация</a>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+const PrivateRoute = ({ children }: { children: React.JSX.Element }) => {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) return <Loader />;
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
 };
+
+
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/" element={<Home />} />
+
+          <Route path="/create-account" element={
+            <PrivateRoute>
+              <CreateAccountPage />
+            </PrivateRoute>} />
+
+          <Route path="/accounts/:accountName" element={
+            <PrivateRoute>
+              <AccountPage />
+            </PrivateRoute>} />
+
+          <Route path="/courses/:courseId" element={
+            <PrivateRoute>
+              <CoursePage />
+            </PrivateRoute>}
+          />
+
+          <Route path="/courses/:courseId/lessons/:lessonId" element={
+            <PrivateRoute>
+              <LessonPage />
+            </PrivateRoute>}
+          />
+
+        </Routes>
+      </AuthProvider>
+    </Router>
+  );
+}
 
 export default App;
