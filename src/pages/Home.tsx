@@ -64,18 +64,18 @@ export default function HomePage() {
                     <Button size="lg" variant="light" onClick={() => navigate('/register')}>
                         Начать обучение
                     </Button>
-                    {/* <Button size="lg" variant="ghost" onClick={() => navigate('/courses')}>
+                    <Button size="lg" variant="ghost" onClick={() => navigate('/courses')}>
                         Посмотреть курсы
-                    </Button> */}
+                    </Button>
                 </motion.div>
 
                 <div className="grid gap-6 max-w-5xl w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-4">
                     <Feature title="Управление курсами" description="Создавайте модули, уроки, блоки, видео и задания в удобном редакторе." />
-                    {/* <Feature title="Отслеживание прогресса" description="Следите за успеваемостью студентов и получайте аналитику по каждому курсу." /> */}
+                    <Feature title="Отслеживание прогресса" description="Следите за успеваемостью студентов и получайте аналитику по каждому курсу." />
                     <Feature title="Гибкая регистрация" description="Лёгкий вход и регистрация для студентов и преподавателей." />
-                    {/* <Feature title="Современный дизайн" description="Интуитивно понятный и приятный интерфейс на всех устройствах." /> */}
+                    <Feature title="Современный дизайн" description="Интуитивно понятный и приятный интерфейс на всех устройствах." />
                     <Feature title="Безопасность данных" description="Ваши данные надёжно защищены с использованием современных стандартов безопасности." />
-                    {/* <Feature title="Интеграция API" description="Расширьте возможности платформы с помощью готового API-интерфейса." /> */}
+                    <Feature title="Интеграция API" description="Расширьте возможности платформы с помощью готового API-интерфейса." />
                 </div>
             </main>
         </div>
