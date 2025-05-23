@@ -7,9 +7,8 @@ export function useLessons(moduleId: number) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchLessons = async () => {
-            try {
+     const refetch = async () => {
+           try {
                 const response = await getLessonsByModuleID(moduleId);
                 setLessons(response.data.lessons);
             } catch (err) {
@@ -19,8 +18,9 @@ export function useLessons(moduleId: number) {
             }
         };
 
-        if (moduleId) fetchLessons();
+    useEffect(() => {
+        if (moduleId) refetch();
     }, [moduleId]);
 
-    return { lessons, isLoading, error };
+    return { lessons, isLoading, error,refetch };
 }

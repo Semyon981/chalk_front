@@ -7,20 +7,20 @@ export function useModules(courseId: number) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchModules = async () => {
-            try {
-                const response = await getModulesByCourseID(courseId);
-                setModules(response.data.modules);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'Ошибка загрузки модулей');
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    const refetch = async () => {
+        try {
+            const response = await getModulesByCourseID(courseId);
+            setModules(response.data.modules);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Ошибка загрузки модулей');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-        if (courseId) fetchModules();
+    useEffect(() => {
+        if (courseId) refetch();
     }, [courseId]);
 
-    return { modules, isLoading, error };
+    return { modules, isLoading, error, refetch };
 }

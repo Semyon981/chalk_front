@@ -5,13 +5,16 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import { AuthProvider } from './context/AuthContext';
 import CreateAccountPage from './pages/CreateAccount';
-import AccountPage from './pages/Account';
+import AccountPage from './pages/Account/AccountPage';
 import Loader from './components/Loader';
-// import { AccountPage } from "./pages/Account"
 
 import { useAuth } from './context/AuthContext';
-import CoursePage from './pages/Course';
-import LessonPage from './pages/Lesson';
+import { AccountMembersPage } from './pages/Account/AccountMembersPage';
+import { AccountCoursesPage } from './pages/Account/AccountCoursesPage';
+import { MyCoursesPage } from './pages/Account/MyCoursesPage';
+import CoursePage from './pages/Account/CoursePage';
+import { CreateCourseModal } from './pages/Account/CreateCourseModal';
+import LessonPage from './pages/Account/LessonPage';
 
 const PrivateRoute = ({ children }: { children: React.JSX.Element }) => {
   const { user, isLoading } = useAuth();
@@ -43,23 +46,61 @@ function App() {
           <Route path="/accounts/:accountName" element={
             <PrivateRoute>
               <AccountPage />
-            </PrivateRoute>} />
+            </PrivateRoute>
+          }>
 
-          <Route path="/courses/:courseId" element={
-            <PrivateRoute>
-              <CoursePage />
-            </PrivateRoute>}
-          />
+            <Route index element={
+              <PrivateRoute>
+                <AccountMembersPage />
+              </PrivateRoute>} />
 
-          <Route path="/courses/:courseId/lessons/:lessonId" element={
-            <PrivateRoute>
-              <LessonPage />
-            </PrivateRoute>}
-          />
+            <Route path="users" element={
+              <PrivateRoute>
+                <AccountMembersPage />
+              </PrivateRoute>} />
+
+
+            <Route path="courses" element={
+              <PrivateRoute>
+                <AccountCoursesPage />
+              </PrivateRoute>} />
+
+
+            {/* <Route path="courses/:courseId" element={
+              <PrivateRoute>
+                <CoursePage />
+              </PrivateRoute>
+            }>
+              <Route index element={<PrivateRoute><CoursePage /></PrivateRoute>} />
+              <Route path="lessons/:lessonId" element={<PrivateRoute><LessonPage /></PrivateRoute>} />
+            </Route> */}
+
+            <Route path="courses/:courseId">
+
+              <Route index element={
+                <PrivateRoute>
+                  <CoursePage />
+                </PrivateRoute>
+              } />
+
+              <Route path="lessons/:lessonId" element={
+                <PrivateRoute>
+                  <LessonPage />
+                </PrivateRoute>
+              } />
+            </Route>
+
+            <Route path="my-courses" element={
+              <PrivateRoute>
+                <MyCoursesPage />
+              </PrivateRoute>} />
+
+          </Route>
+
 
         </Routes>
       </AuthProvider>
-    </Router>
+    </Router >
   );
 }
 

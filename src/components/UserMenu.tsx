@@ -53,11 +53,11 @@ export const UserMenu = ({
                         transition={{ duration: 0.2 }}
                         className={cn(
                             "absolute right-10 mt-2 w-80 z-50",
-                            "bg-gray-900 border border-gray-800 rounded-xl shadow-lg",
+                            "bg-cgray-800 border border-cgray-600 rounded-xl shadow-lg",
                             "overflow-hidden"
                         )}
                     >
-                        <div className="p-4 border-b border-gray-800">
+                        <div className="p-4 border-b border-cgray-600">
                             <div className="flex items-center gap-3 p-2">
                                 <Avatar name={user.name} size="lg" />
                                 <div className="min-w-0">
@@ -67,11 +67,13 @@ export const UserMenu = ({
                             </div>
                         </div>
 
-                        <div className="p-2 border-b border-gray-800">
+                        <div className="p-2 border-b border-cgray-600">
                             <div className="flex justify-between items-center px-2 py-1">
+
                                 <p className="text-sm font-medium text-gray-200">
                                     Аккаунты
                                 </p>
+
                                 {onCreateAccount && (
                                     <button
                                         onClick={(e) => {
@@ -79,7 +81,7 @@ export const UserMenu = ({
                                             onCreateAccount();
                                             setIsOpen(false);
                                         }}
-                                        className="text-gray-400 hover:text-gray-300 text-sm flex items-center gap-1"
+                                        className="text-cgray-300 hover:text-cgray-100 text-sm flex items-center gap-1"
                                     >
                                         <PlusIcon className="h-5 w-5" />
                                     </button>
@@ -89,7 +91,7 @@ export const UserMenu = ({
                                 {accounts.map((account) => (
                                     <li key={account.id}>
                                         <button
-                                            className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
+                                            className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-cgray-600 transition-colors cursor-pointer"
                                             onClick={() => {
                                                 setIsOpen(false);
                                                 navigate('/accounts/' + account.name);
@@ -100,7 +102,7 @@ export const UserMenu = ({
                                     </li>
                                 ))}
                                 {accounts.length === 0 && (
-                                    <li className="px-3 py-2 text-sm text-gray-400">
+                                    <li className="px-3 py-2 text-sm text-cgray-300">
                                         Нет аккаунтов
                                     </li>
                                 )}
@@ -109,7 +111,7 @@ export const UserMenu = ({
 
                         <div className="p-2">
                             <button
-                                className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
+                                className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-cgray-600 transition-colors cursor-pointer"
                                 onClick={() => {
                                     onLogout();
                                     setIsOpen(false);

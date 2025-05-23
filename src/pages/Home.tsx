@@ -14,7 +14,7 @@ export default function HomePage() {
 
     return isLoading || isLoadingAccs ? (<div className="min-h-screen bg-gradient-to-b from-blue-900 to-black" />) : (
         <div className="min-h-screen bg-gradient-to-b from-blue-900 to-black text-white">
-            <header className="flex justify-between items-center px-8 py-6 bg-blue-950 shadow-md">
+            <header className="flex justify-between items-center px-8 py-4 bg-blue-950 shadow-md">
                 <h1 className="text-2xl font-bold text-white">Courso.ru</h1>
                 <div className="flex items-center gap-4">
                     {user ? (

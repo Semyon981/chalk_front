@@ -7,20 +7,20 @@ export function useLesson(lessonId: number) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchLesson = async () => {
-            try {
-                const response = await getLessonByID(lessonId);
-                setLesson(response.data.lesson);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'Ошибка загрузки уроков');
-            } finally {
-                setIsLoading(false);
-            }
-        };
+     const refetch = async () => {
+        try {
+            const response = await getLessonByID(lessonId);
+            setLesson(response.data.lesson);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Ошибка загрузки уроков');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-        if (lessonId) fetchLesson();
+    useEffect(() => {
+        if (lessonId) refetch();
     }, [lessonId]);
 
-    return { lesson, isLoading, error };
+    return { lesson, isLoading, error,refetch };
 }

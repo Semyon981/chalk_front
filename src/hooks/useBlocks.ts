@@ -7,20 +7,20 @@ export function useBlocks(lessonId: number) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchBlocks = async () => {
-            try {
-                const response = await getBlocksByLessonID(lessonId);
-                setBlocks(response.data.blocks);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'Ошибка загрузки блоков');
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    const refetch = async () => {
+        try {
+            const response = await getBlocksByLessonID(lessonId);
+            setBlocks(response.data.blocks);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Ошибка загрузки блоков');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-        if (lessonId) fetchBlocks();
+    useEffect(() => {
+        if (lessonId) refetch();
     }, [lessonId]);
 
-    return { blocks, isLoading, error };
+    return { blocks, isLoading, error, refetch };
 }
