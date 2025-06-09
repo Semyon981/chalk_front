@@ -170,7 +170,7 @@ function CoursePage() {
                             {/* Область добавления модуля в самом начале */}
                             <div className="relative h-5">
                                 <div
-                                    className={`absolute inset-0 flex items-center justify-center ${modules.length === 0
+                                    className={`absolute inset-0 flex items-center justify-center ${!isLoadingModules && modules.length === 0
                                         ? "opacity-100 animate-pulse"
                                         : "opacity-0 hover:opacity-100 transition-opacity"
                                         } cursor-pointer`}
@@ -357,6 +357,7 @@ function LessonsList({
         error,
         refetch: refetchLessons,
     } = useLessons(module.id);
+
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -412,7 +413,7 @@ function LessonsList({
             <SortableContext items={lessons} strategy={verticalListSortingStrategy}>
                 <div className="relative h-4">
                     <div
-                        className={`absolute inset-0 flex items-center justify-center ${lessons.length === 0
+                        className={`absolute inset-0 flex items-center justify-center ${!isLoading && lessons.length === 0
                             ? "opacity-100 animate-pulse"
                             : "opacity-0 hover:opacity-100 transition-opacity"
                             } cursor-pointer`}
@@ -423,37 +424,49 @@ function LessonsList({
                 </div>
 
                 <div className="space-y-0 relative">
-                    {lessons.map((lesson, index) => (
-                        <React.Fragment key={lesson.id}>
-                            <SortableLesson
-                                lesson={lesson}
-                                accountName={accountName}
-                                courseId={courseId}
-                                onDelete={async () => {
-                                    await removeLesson({ id: lesson.id });
-                                    await refetchLessons();
-                                }}
-                                onUpdate={async (name: string) => {
-                                    await updateLesson({ id: lesson.id, name });
-                                    await refetchLessons();
-                                }}
-                            />
-                            {/* Область добавления урока после каждого урока */}
-                            <div className="relative h-4">
-                                <div
-                                    className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-                                    onClick={() => handleAddLesson(index + 1)}
-                                >
-                                    <div className="flex-1 h-0.25 bg-white rounded-full" />
-                                    {/* <div className="flex items-center w-full px-2">
-                                        <div className="flex-1 h-0.25 bg-white rounded-full" />
-                                        <Plus className="mx-2 h-4 w-4 text-white" />
-                                        <div className="flex-1 h-0.25 bg-white rounded-full" />
-                                    </div> */}
-                                </div>
-                            </div>
-                        </React.Fragment>
-                    ))}
+                    {isLoading ? (
+                        <Skeleton className="h-8 w-auto rounded-full" />
+                    ) : (
+                        <motion.h1
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                        // className="text-3xl font-bold text-gray-100"
+                        >
+                            {lessons.map((lesson, index) => (
+                                <React.Fragment key={lesson.id}>
+                                    <SortableLesson
+                                        lesson={lesson}
+                                        accountName={accountName}
+                                        courseId={courseId}
+                                        onDelete={async () => {
+                                            await removeLesson({ id: lesson.id });
+                                            await refetchLessons();
+                                        }}
+                                        onUpdate={async (name: string) => {
+                                            await updateLesson({ id: lesson.id, name });
+                                            await refetchLessons();
+                                        }}
+                                    />
+                                    {/* Область добавления урока после каждого урока */}
+                                    <div className="relative h-4">
+                                        <div
+                                            className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                                            onClick={() => handleAddLesson(index + 1)}
+                                        >
+                                            <div className="flex-1 h-0.25 bg-white rounded-full" />
+                                            {/* <div className="flex items-center w-full px-2">
+                                                <div className="flex-1 h-0.25 bg-white rounded-full" />
+                                                <Plus className="mx-2 h-4 w-4 text-white" />
+                                                <div className="flex-1 h-0.25 bg-white rounded-full" />
+                                            </div> */}
+                                        </div>
+                                    </div>
+                                </React.Fragment>
+                            ))}
+                        </motion.h1>
+                    )}
+
+
                 </div>
             </SortableContext>
         </DndContext>

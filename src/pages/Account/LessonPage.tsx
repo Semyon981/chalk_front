@@ -171,9 +171,10 @@ export default function LessonPage() {
                             items={blocks}
                             strategy={verticalListSortingStrategy}
                         >
+
                             <div className="relative h-5">
                                 <div
-                                    className={`absolute inset-0 flex items-center justify-center ${blocks.length === 0
+                                    className={`absolute inset-0 flex items-center justify-center ${!isLoadingBlocks && blocks.length === 0
                                         ? "opacity-100 animate-pulse"
                                         : "opacity-0 hover:opacity-100 transition-opacity"
                                         } cursor-pointer`}
@@ -182,6 +183,8 @@ export default function LessonPage() {
                                     <div className="flex-1 h-0.5 bg-white rounded-full" />
                                 </div>
                             </div>
+
+
 
                             {blocks.map((block, index) => (
                                 <React.Fragment key={block.id}>
@@ -441,6 +444,7 @@ function VideoBlock({
     onUpdate: (payload: UpdateBlockRequest) => void;
 }) {
     const [fileId, setFileId] = useState(block.file_id);
+    const [isHovered, setIsHovered] = useState(false);
     // const [isLoadedMetadata, setIsLoadedMetadata] = useState(false);
     // const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -502,7 +506,7 @@ function VideoBlock({
             animate={{ opacity: 1 }}
             className="w-full"
         >
-            <div className="flex justify-center">
+            <div className="flex justify-start">
                 <div className="relative w-auto h-auto">
                     <button
                         className="absolute -left-8 top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 hover:bg-cgray-600 p-1 rounded z-10"
@@ -519,7 +523,9 @@ function VideoBlock({
                     </button>
                     {fileId ? (
                         <video
-                            controls
+                            controls={isHovered}
+                            onMouseEnter={() => setIsHovered(true)}
+                            onMouseLeave={() => setIsHovered(false)}
                             className="block h-full w-auto max-h-100 object-contain rounded-lg"
                             src={`${getFileUrl(fileId)}`}
                         />

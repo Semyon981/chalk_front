@@ -9,6 +9,7 @@ export function useBlocks(lessonId: number) {
 
     const refetch = async () => {
         try {
+            // await new Promise(r => setTimeout(r, 2000));
             const response = await getBlocksByLessonID(lessonId);
             setBlocks(response.data.blocks);
         } catch (err) {

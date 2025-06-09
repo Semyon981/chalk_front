@@ -64,7 +64,7 @@ export default function AccountPage() {
     return (
         <div className="min-h-screen bg-cgray-900 text-white">
             <header className="fixed top-0 left-0 right-0 z-50 bg-cgray-900/10 backdrop-blur-md">
-                <div className="flex items-center justify-between h-16">
+                <div className="flex items-center justify-between min-h-16">
                     {/* Левый блок - название аккаунта */}
                     <div className="flex items-center min-w-0 flex-none pl-8">
                         <h1 className="text-2xl font-semibold text-gray-100 truncate">
@@ -73,7 +73,7 @@ export default function AccountPage() {
                     </div>
 
                     {/* Центральный блок - табы */}
-                    <nav className="flex flex-1 justify-center overflow-x-auto px-4 hide-scrollbar">
+                    <nav className="flex flex-1 justify-center px-4 hide-scrollbar">
                         <div className="flex gap-1">
                             {tabs.map((tab) => {
                                 const to = `/accounts/${accountName}/${tab.path}`;
@@ -87,18 +87,18 @@ export default function AccountPage() {
                                 relative px-3 py-2 text-sm rounded-md transition-colors
                                 ${isActive
                                                 ? 'text-white bg-cgray-700'
-                                                : 'text-cgray-300 hover:bg-cgray-500/40'
+                                                : 'text-cgray-200 hover:bg-cgray-500/40'
                                             }
                             `}
                                     >
                                         {tab.label}
-                                        {isActive && (
+                                        {/* {isActive && (
                                             <motion.div
                                                 layoutId="account-tab-underline"
                                                 className="absolute inset-x-1 -bottom-px h-1 bg-cgray-400"
                                                 transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                                             />
-                                        )}
+                                        )} */}
                                     </Link>
                                 );
                             })}
