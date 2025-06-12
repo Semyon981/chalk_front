@@ -43,7 +43,6 @@ export default function LoginPage() {
 
                 <div className="space-y-4 text-white">
                     <div>
-                        {/* <label className="block text-sm font-medium mb-2">Email</label> */}
                         <input
                             placeholder="Введите email"
                             type="email"
@@ -60,7 +59,6 @@ export default function LoginPage() {
                     </div>
 
                     <div>
-                        {/* <label className="block text-sm font-medium mb-2">Пароль</label> */}
                         <input
                             placeholder="Введите пароль"
                             type="password"

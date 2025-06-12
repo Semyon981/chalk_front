@@ -3,7 +3,6 @@ import baseURL from "./api"
 import type { UploadFileResponse } from './types';
 import axios, { type AxiosProgressEvent } from 'axios';
 
-// Обновлённая функция uploadFile
 export const uploadFile = (
   file: File,
   options?: {

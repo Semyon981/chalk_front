@@ -167,7 +167,6 @@ function CoursePage() {
                             items={modules}
                             strategy={verticalListSortingStrategy}
                         >
-                            {/* Область добавления модуля в самом начале */}
                             <div className="relative h-5">
                                 <div
                                     className={`absolute inset-0 flex items-center justify-center ${!isLoadingModules && modules.length === 0
@@ -195,18 +194,12 @@ function CoursePage() {
                                             await refetchModules();
                                         }}
                                     />
-                                    {/* Область добавления модуля после каждого модуля */}
                                     <div className="relative h-5">
                                         <div
                                             className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
                                             onClick={() => handleAddModule(index + 1)}
                                         >
                                             <div className="flex-1 h-0.5 bg-white rounded-full" />
-                                            {/* <div className="flex items-center w-full px-2">
-                                                <div className="flex-1 h-0.5 bg-white rounded-full" />
-                                                <Plus className="mx-2 h-6 w-6 text-white" />
-                                                <div className="flex-1 h-0.5 bg-white rounded-full" />
-                                            </div> */}
                                         </div>
                                     </div>
                                 </React.Fragment>
@@ -430,7 +423,6 @@ function LessonsList({
                         <motion.h1
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                        // className="text-3xl font-bold text-gray-100"
                         >
                             {lessons.map((lesson, index) => (
                                 <React.Fragment key={lesson.id}>
@@ -447,18 +439,12 @@ function LessonsList({
                                             await refetchLessons();
                                         }}
                                     />
-                                    {/* Область добавления урока после каждого урока */}
                                     <div className="relative h-4">
                                         <div
                                             className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
                                             onClick={() => handleAddLesson(index + 1)}
                                         >
                                             <div className="flex-1 h-0.25 bg-white rounded-full" />
-                                            {/* <div className="flex items-center w-full px-2">
-                                                <div className="flex-1 h-0.25 bg-white rounded-full" />
-                                                <Plus className="mx-2 h-4 w-4 text-white" />
-                                                <div className="flex-1 h-0.25 bg-white rounded-full" />
-                                            </div> */}
                                         </div>
                                     </div>
                                 </React.Fragment>
@@ -580,7 +566,7 @@ function LessonItem({
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                             onClick={(e) => {
-                                e.stopPropagation(); // Остановка всплытия
+                                e.stopPropagation();
                                 isEditing ? handleUpdate() : setIsEditing(true);
                             }}
                             className="text-cgray-200 hover:text-cgray-100 p-1 rounded"
@@ -590,16 +576,13 @@ function LessonItem({
 
                         <button
                             onClick={(e) => {
-                                e.stopPropagation(); // Остановка всплытия
+                                e.stopPropagation();
                                 onDelete();
                             }}
                             className="text-cgray-200 hover:text-cgray-100 p-0 rounded"
                         >
                             <X size={20} />
                         </button>
-                        {/* <span className="text-sm text-cgray-400">
-                            Урок {lesson.order_idx + 1}
-                        </span> */}
                     </div>
                 </div>
             </div>

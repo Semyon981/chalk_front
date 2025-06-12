@@ -352,16 +352,17 @@ function BlockSection({
                     onDelete={onDelete}
                     onUpdate={onUpdate}
                 />
-            ) : (
+            ) : block.type === 'video' ? (
                 <VideoBlock
                     block={block}
                     dragAttributes={dragAttributes}
                     dragListeners={dragListeners}
                     onDelete={onDelete}
                     onUpdate={onUpdate}
-                // onFileUpload={onFileUpload}
                 />
-            )}
+            ) : block.type === 'test' ? (
+                <div>Test Block</div>
+            ) : null}
         </div>
     );
 }

@@ -1,20 +1,16 @@
 import axios, { AxiosError, type AxiosRequestConfig } from 'axios';
 import type { RefreshSessionRequest, RefreshSessionResponse } from './types';
-// import { useNavigate } from 'react-router-dom';
 
-// const baseURL = process.env.REACT_APP_API_BASE_URL || '/';
 const baseURL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export const api = axios.create({
   baseURL,
   headers: {
     'Content-Type': 'application/json',
-    // 'Access-Control-Allow-Origin': '*.example.com'
   },
   // withCredentials: true
 });
 
-// Attach access token to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
   if (token && config.headers) {
@@ -23,7 +19,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Token refresh logic
 let isRefreshing = false;
 let failedQueue: any[] = [];
 
@@ -41,7 +36,6 @@ const processQueue = (error: AxiosError | null, token: string | null = null) => 
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-  // const navigate = useNavigate();
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -88,8 +82,6 @@ api.interceptors.response.use(
         processQueue(err as AxiosError, null);
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-        // можно перенаправить пользователя на логин, если нужно
-        // navigate('/login');
         return Promise.reject(err);
       } finally {
         isRefreshing = false;

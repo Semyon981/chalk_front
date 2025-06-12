@@ -60,7 +60,6 @@ export default function RegisterPage() {
                 {step === 1 ? (
                     <div className="space-y-4 text-white">
                         <div>
-                            {/* <label className="block text-sm font-medium mb-2">Email</label> */}
                             <input
                                 placeholder='Введите email'
                                 type="email"
@@ -78,7 +77,6 @@ export default function RegisterPage() {
                 ) : (
                     <div className="space-y-4 text-white">
                         <div>
-                            {/* <label className="block text-sm font-medium mb-2">Код из письма</label> */}
                             <input
                                 placeholder='Код из письма'
                                 type="text"
@@ -90,7 +88,6 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            {/* <label className="block text-sm font-medium mb-2">Имя</label> */}
                             <input
                                 placeholder='Имя'
                                 type="text"
@@ -102,7 +99,6 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            {/* <label className="block text-sm font-medium mb-2">Пароль</label> */}
                             <input
                                 placeholder='Пароль'
                                 type="password"
