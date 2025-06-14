@@ -33,6 +33,8 @@ export interface GetAccountMemberCoursesResponse { courses: Course[]; }
 export interface GetAccountCoursesResponse { courses: Course[]; }
 export interface UpdateAccountMemberRequest { id: number; user_id: number; role: string; }
 export interface RemoveAccountMemberRequest { id: number; user_id: number; }
+export interface Invite { id: number, email: string, account_id: number, created: string }
+export interface GetAllInvitesResponse { invites: Invite[] }
 
 // Course
 export interface Course { id: number; account_id: number; name: string; }
@@ -79,3 +81,7 @@ export interface RemoveBlockRequest { id: number; }
 
 // File
 export interface UploadFileResponse { id: number; uploader_user_id: number; name: string; content_type: string; size: number; uploaded_at: string; }
+
+// Invites
+export interface SendInviteRequest { account_id: number; email: string; callback_url: string; }
+export interface RemoveInviteRequest { id: number; }

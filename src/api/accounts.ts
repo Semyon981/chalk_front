@@ -1,11 +1,12 @@
 import api from './api';
-import type {
-  GetUserAccountsResponse, GetUserByIDResponse,
-  CreateAccountRequest, CreateAccountResponse,
-  GetAccountByIDResponse, GetAccountMembersResponse,
-  AddAccountMemberRequest, SuccessResponse,
-  UpdateAccountMemberRequest, RemoveAccountMemberRequest,
-  GetAccountMemberCoursesResponse, GetAccountCoursesResponse,CheckAccountNameResponse, GetAccountByNameResponse
+import {
+  type GetUserAccountsResponse, type GetUserByIDResponse,
+  type CreateAccountRequest, type CreateAccountResponse,
+  type GetAccountByIDResponse, type GetAccountMembersResponse,
+  type AddAccountMemberRequest, type SuccessResponse,
+  type UpdateAccountMemberRequest, type RemoveAccountMemberRequest,
+  type GetAccountMemberCoursesResponse, type GetAccountCoursesResponse,type CheckAccountNameResponse, type GetAccountByNameResponse,
+  type GetAllInvitesResponse
 } from './types';
 
 export const getUserAccounts = () => api.get<GetUserAccountsResponse>('/accounts');
@@ -32,3 +33,6 @@ export const checkAccountName = (name?: string) =>
 
 export const getAccountByName = (name?: string) =>
   api.get<GetAccountByNameResponse>('/accounts/getbyname', { params: { name } });
+
+export const getAllInvites = (accountId: number) =>
+  api.get<GetAllInvitesResponse>(`/accounts/${accountId}/invites`);
