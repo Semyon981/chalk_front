@@ -1,7 +1,4 @@
 
-import { type Account } from '@/api/types'
-
-
 import { useForm } from 'react-hook-form';
 import { createCourse } from '@/api/courses';
 import { Button } from '@/components/ui/Button';
