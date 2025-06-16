@@ -7,22 +7,29 @@ export default function useAccountUsers(accountId?: number) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchMembers = async () => {
     if (!accountId) return;
 
-    const loadMembers = async () => {
-      try {
-        const response = await getAccountMembers(accountId);
-        setMembers(response.data.members);
-      } catch (err) {
-        setError('Ошибка загрузки пользователей');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await getAccountMembers(accountId);
+      setMembers(response.data.members);
+    } catch (err) {
+      setError('Ошибка загрузки пользователей');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    loadMembers();
+  useEffect(() => {
+    fetchMembers();
   }, [accountId]);
 
-  return { members, isLoading, error };
+  return { 
+    members, 
+    isLoading, 
+    error, 
+    refetch: fetchMembers 
+  };
 }

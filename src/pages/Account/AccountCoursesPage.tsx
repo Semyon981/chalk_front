@@ -1,17 +1,28 @@
 import { useAccountCourses } from '@/hooks/useAccountCourses';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Link, Outlet } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useOutletContext } from 'react-router-dom';
-import { type Account } from '@/api/types';
-import { useNavigate, useMatch } from 'react-router-dom';
-import { useState } from 'react';
+import { type Account, type AccountMember } from '@/api/types';
+import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { CreateCourseModal } from '@/pages/Account/CreateCourseModal';
+import { getUserRoleInAccount } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 export function AccountCoursesPage() {
-    const { account } = useOutletContext<{ account: Account }>();
+    const { account, members } = useOutletContext<{ account: Account, members: AccountMember[] }>();
+    const { user } = useAuth();
     const { courses, isLoading, error, refreshCourses } = useAccountCourses(account.id);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const navigate = useNavigate()
+
+    
+    const userRole = getUserRoleInAccount(user!.id, members);
+
+    useEffect(() => {
+        if (userRole === 'member') navigate('/account');
+    }, [userRole]);
+
 
     if (error) return <div className="text-red-400">{error}</div>;
 

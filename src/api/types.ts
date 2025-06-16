@@ -21,18 +21,19 @@ export interface GetUserByIDResponse { user: User; }
 // Account
 export interface Account { id: number; name: string; }
 export interface User { id: number; name: string; email: string; }
-export interface AccountMember { user: User; role: string; }
+export type AccountMemberRole = 'owner' | 'admin' | 'member';
+export interface AccountMember { user: User; role: AccountMemberRole; }
 export interface CreateAccountRequest { name: string; }
 export interface CreateAccountResponse { account: Account; }
 export interface GetAccountByIDResponse { account: Account; }
 export interface GetAccountByNameResponse { account: Account; }
 export interface GetAccountMembersResponse { members: AccountMember[]; }
-export interface AddAccountMemberRequest { id: number; user_id: number; role: string; }
+export interface AddAccountMemberRequest { id: number; user_id: number; role: AccountMemberRole; }
 export interface SuccessResponse { success: boolean; }
 export interface GetAccountMemberCoursesResponse { courses: Course[]; }
 export interface GetAccountCoursesResponse { courses: Course[]; }
-export interface UpdateAccountMemberRequest { id: number; user_id: number; role: string; }
-export interface RemoveAccountMemberRequest { id: number; user_id: number; }
+export interface UpdateAccountMemberRequest { account_id: number; user_id: number; role: AccountMemberRole; }
+export interface RemoveAccountMemberRequest { account_id: number; user_id: number; }
 export interface Invite { id: number, email: string, account_id: number, created: string }
 export interface GetAllInvitesResponse { invites: Invite[] }
 
@@ -85,3 +86,4 @@ export interface UploadFileResponse { id: number; uploader_user_id: number; name
 // Invites
 export interface SendInviteRequest { account_id: number; email: string; callback_url: string; }
 export interface RemoveInviteRequest { id: number; }
+export interface AcceptInviteRequest { key: string; }

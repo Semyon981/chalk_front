@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { signIn } from '@/api/auth';
 import { getUserByID } from '@/api/users';
@@ -11,6 +11,8 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const { setUser } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const inviteKey = searchParams.get('key');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -21,7 +23,12 @@ export default function LoginPage() {
 
             const userRes = await getUserByID('me');
             setUser(userRes.data.user);
-            navigate('/');
+
+            if (inviteKey) {
+                navigate(`/acceptinvite?key=${inviteKey}`);
+            } else {
+                navigate('/');
+            }
         } catch (err) {
             setError('Неверные учетные данные');
         }
@@ -81,7 +88,7 @@ export default function LoginPage() {
                     Нет аккаунта?{' '}
                     <button
                         type="button"
-                        onClick={() => navigate('/register')}
+                        onClick={() => navigate('/register' + (inviteKey ? `?key=${inviteKey}` : ''))}
                         className="text-white hover:underline font-medium"
                     >
                         Создать аккаунт

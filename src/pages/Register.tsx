@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { sendCode, signUp, checkEmail } from '@/api/auth';
 
@@ -12,6 +12,8 @@ export default function RegisterPage() {
     const [error, setError] = useState('');
     const [codeId, setCodeId] = useState('');
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const inviteKey = searchParams.get('key');
 
     const handleSendCode = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,7 +37,11 @@ export default function RegisterPage() {
         e.preventDefault();
         try {
             await signUp({ code_id: codeId, code, name, password });
-            navigate('/login');
+            if (inviteKey) {
+                navigate(`/login?key=${inviteKey}`);
+            } else {
+                navigate('/login');
+            }
         } catch (err) {
             setError('Ошибка регистрации. Проверьте данные.');
         }
@@ -119,7 +125,7 @@ export default function RegisterPage() {
                     Уже есть аккаунт?{' '}
                     <button
                         type="button"
-                        onClick={() => navigate('/login')}
+                        onClick={() => navigate('/login' + (inviteKey ? `?key=${inviteKey}` : ''))}
                         className="text-white hover:underline font-medium"
                     >
                         Войти

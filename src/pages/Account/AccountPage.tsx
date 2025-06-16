@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { Outlet, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { UserMenu } from '@/components/UserMenu';
@@ -8,6 +7,9 @@ import useAccounts from "@/hooks/useAccounts";
 import useAccount from '@/hooks/useAccount';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Link } from 'react-router-dom';
+import { getUserRoleInAccount } from '@/lib/utils';
+import useAccountUsers from '@/hooks/useAccountUsers';
+import { useEffect, useState } from 'react';
 
 export default function AccountPage() {
     const { accountName } = useParams();
@@ -17,14 +19,26 @@ export default function AccountPage() {
 
     const { account, isLoading: isLoadingAccount, error: accountError } = useAccount(accountName);
     const { accounts } = useAccounts(user?.id || null);
+    const { members, isLoading: isLoadingUsers, error: usersError, refetch: refetchMembers } = useAccountUsers(account?.id);
+    
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [isCheckingRole, setIsCheckingRole] = useState(true);
 
+    useEffect(() => {
+        if (!isLoadingAccount && !isLoadingUsers && user && account && members) {
+            const role = getUserRoleInAccount(user.id, members);
+            setUserRole(role);
+            setIsCheckingRole(false);
+        }
+    }, [isLoadingAccount, isLoadingUsers, user, account, members]);
+    
     const tabs = [
-        { id: 'users', label: 'Пользователи', path: `users` },
-        { id: 'courses', label: 'Курсы', path: `courses` },
-        { id: 'my-courses', label: 'Мои курсы', path: `my-courses` },
+        { id: 'users', label: 'Пользователи', path: 'users', roles: ['owner', 'admin', 'member'] },
+        { id: 'courses', label: 'Курсы', path: 'courses', roles: ['owner', 'admin'] },
+        { id: 'my-courses', label: 'Мои курсы', path: 'my-courses', roles: ['owner', 'admin', 'member'] },
     ];
 
-    if (isLoadingAccount) {
+    if (isLoadingAccount || isLoadingUsers || isCheckingRole) {
         return (
             <div className="min-h-screen bg-cgray-900 text-white">
                 <header className="flex justify-between items-center px-8 py-6">
@@ -43,7 +57,7 @@ export default function AccountPage() {
         );
     }
 
-    if (accountError) {
+    if (accountError || usersError || !userRole) {
         return (
             <div className="min-h-screen bg-cgray-900 flex items-center justify-center">
                 <div className="text-red-400 text-xl text-center p-8">
@@ -53,13 +67,15 @@ export default function AccountPage() {
                         variant="ghost"
                         className="mt-4"
                         onClick={() => navigate('/')}
-                    >
+                        >
                         Вернуться на главную
                     </Button>
                 </div>
             </div>
         );
     }
+
+    const filteredTabs = tabs.filter(tab => tab.roles.includes(userRole));
 
     return (
         <div className="min-h-screen bg-cgray-900 text-white">
@@ -75,7 +91,7 @@ export default function AccountPage() {
                     {/* Центральный блок - табы */}
                     <nav className="flex flex-1 justify-center px-4 hide-scrollbar">
                         <div className="flex gap-1">
-                            {tabs.map((tab) => {
+                            {filteredTabs.map((tab) => {
                                 const to = `/accounts/${accountName}/${tab.path}`;
                                 const isActive = location.pathname === to;
 
@@ -127,7 +143,7 @@ export default function AccountPage() {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
                 >
-                    <Outlet context={{ account }} />
+                    <Outlet context={{account, members, refetchMembers}} />
                 </motion.div>
             </div>
         </div>

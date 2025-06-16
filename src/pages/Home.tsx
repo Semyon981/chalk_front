@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext";
 import { UserMenu } from "@/components/UserMenu";
-import { useState, useEffect } from "react";
-import { getUserAccounts } from "@/api/users";
 import useAccounts from "@/hooks/useAccounts";
 
 export default function HomePage() {

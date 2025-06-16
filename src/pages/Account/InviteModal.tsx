@@ -29,7 +29,7 @@ export function InviteModal({ isOpen, accountId, onClose, onSuccess }: Props) {
       await sendInvite({
         account_id: accountId,
         email: data.email.trim(),
-        callback_url: import.meta.env.VITE_API_URL
+        callback_url: import.meta.env.VITE_BASE_URL + '/acceptinvite'
       });
       onSuccess();
       reset();

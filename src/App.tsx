@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useSearchParams } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -13,8 +13,8 @@ import { AccountMembersPage } from './pages/Account/AccountMembersPage';
 import { AccountCoursesPage } from './pages/Account/AccountCoursesPage';
 import { MyCoursesPage } from './pages/Account/MyCoursesPage';
 import CoursePage from './pages/Account/CoursePage';
-import { CreateCourseModal } from './pages/Account/CreateCourseModal';
 import LessonPage from './pages/Account/LessonPage';
+import AcceptInvitePage from './pages/AcceptInvitePage';
 
 const PrivateRoute = ({ children }: { children: React.JSX.Element }) => {
   const { user, isLoading } = useAuth();
@@ -28,6 +28,24 @@ const PrivateRoute = ({ children }: { children: React.JSX.Element }) => {
   return children;
 };
 
+const PrivateInviteRoute = ({ children }: { children: React.JSX.Element }) => {
+  const { user, isLoading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const inviteKey = searchParams.get('key');
+  
+  if (!inviteKey) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (isLoading) return <Loader />;
+
+  if (!user) {
+      return <Navigate to={`/login?key=${inviteKey}`} replace />;
+  }
+
+  return children;
+}
+
 
 function App() {
   return (
@@ -37,6 +55,15 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<Home />} />
+
+          <Route 
+              path="/acceptinvite" 
+              element={
+                <PrivateInviteRoute>
+                  <AcceptInvitePage />
+                </PrivateInviteRoute>
+              } 
+          />
 
           <Route path="/create-account" element={
             <PrivateRoute>

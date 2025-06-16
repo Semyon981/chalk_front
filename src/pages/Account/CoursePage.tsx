@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Outlet, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Link, useOutletContext } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -9,7 +9,7 @@ import { useLessons } from '@/hooks/useLessons';
 import { type Account } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { type Module, type Lesson } from '@/api/types';
-import { ChevronLeft, GripVertical, Plus, X, Edit, Check } from 'lucide-react';
+import { ChevronLeft, GripVertical, X, Edit, Check } from 'lucide-react';
 import {
     DndContext,
     closestCenter,
@@ -347,7 +347,7 @@ function LessonsList({
     const {
         lessons: initialLessons,
         isLoading,
-        error,
+        // error,
         refetch: refetchLessons,
     } = useLessons(module.id);
 
@@ -505,8 +505,8 @@ function SortableLesson({
 
 function LessonItem({
     lesson,
-    accountName,
-    courseId,
+    // accountName,
+    // courseId,
     dragAttributes,
     dragListeners,
     onDelete,
