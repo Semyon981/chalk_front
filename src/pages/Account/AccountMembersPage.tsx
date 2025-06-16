@@ -11,6 +11,7 @@ import { ConfirmModal } from '@/components/ConfirmModal';
 import { getUserRoleInAccount } from '@/lib/utils';
 import { removeAccountMember, updateAccountMember } from '@/api/accounts';
 import { EditIcon, TrashIcon } from 'lucide-react';
+import { Avatar } from '@/components/Avatar';
 
 export function AccountMembersPage() {
     const { account, members, refetchMembers } = useOutletContext<{ account: Account, members: AccountMember[], refetchMembers: () => void }>();
@@ -127,14 +128,17 @@ export function AccountMembersPage() {
                             }`}
                             onClick={() => handleMemberClick(member.user.id)}
                         >
-                            <div className="flex-1">
-                                <h3 className="font-medium text-gray-100">
-                                    {member.user.name}
-                                    {user?.id === member.user.id && (
-                                        <span className="text-sm text-cgray-200 ml-2">(вы)</span>
-                                    )}
-                                </h3>
-                                <p className="text-sm text-cgray-200 mt-1">{member.user.email}</p>
+                            <div className='flex flex-1 items-center gap-5'>
+                                <Avatar name={member.user.name} size="md" />
+                                <div className="flex flex-col">
+                                    <h3 className="font-medium text-gray-100">
+                                        {member.user.name}
+                                        {user?.id === member.user.id && (
+                                            <span className="text-sm text-cgray-200 ml-2">(вы)</span>
+                                        )}
+                                    </h3>
+                                    <p className="text-sm text-cgray-200 mt-1">{member.user.email}</p>
+                                </div>
                             </div>
 
                             {/* Отображение роли или редактор */}

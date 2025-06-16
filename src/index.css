@@ -106,3 +106,22 @@ body {
     font-weight: 600;
     margin: 1em 0 0.5em;
 } */
+
+/* Красивый скроллбар */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #2d3748; /* bg-gray-800 */
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #4a5568; /* bg-gray-600 */
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #718096; /* bg-gray-500 */
+}
