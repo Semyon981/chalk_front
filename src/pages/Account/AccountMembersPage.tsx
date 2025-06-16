@@ -121,7 +121,7 @@ export function AccountMembersPage() {
                             key={member.user.id}
                             className={`relative flex items-center p-4 bg-cgray-700 rounded-lg hover:bg-cgray-800 transition-colors ${
                                 (userRole === 'owner' || userRole === 'admin') && member.role !== 'owner' && member.user.id !== user?.id
-                                && (userRole === 'admin' && member.role !== 'admin')
+                                || (userRole === 'admin' && member.role !== 'admin')
                                 ? 'cursor-pointer'
                                 : ''
                             }`}
