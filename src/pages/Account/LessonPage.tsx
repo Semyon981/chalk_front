@@ -8,7 +8,7 @@ import { useBlocks } from '@/hooks/useBlocks';
 import { type Account, type BlockType, type UpdateBlockRequest } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { type Block, type CreateBlockRequest } from '@/api/types';
-import { ChevronLeft, GripVertical, Plus, X, Edit, Check, Upload, Video, Text, Trash } from 'lucide-react';
+import { ChevronLeft, GripVertical, Plus, X, Edit, Check, Upload, Video, Text, Trash, SquareGanttChartIcon } from 'lucide-react';
 import {
     DndContext,
     closestCenter,
@@ -58,6 +58,8 @@ export default function LessonPage() {
     } = useBlocks(numericLessonId);
 
     const [blocks, setBlocks] = useState<Block[]>([]);
+    const [isEditMode, setIsEditMode] = useState(false);
+
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -70,6 +72,7 @@ export default function LessonPage() {
     }, [initialBlocks]);
 
     const handleDragBlock = async (event: DragEndEvent) => {
+        if (!isEditMode) return;
         const { active, over } = event;
         if (!over || active.id === over.id) return;
 
@@ -95,6 +98,7 @@ export default function LessonPage() {
     const [popupCoords, setPopupCoords] = useState({ x: 0, y: 0 });
 
     const handleAddBlock = async (position: number, type: BlockType) => {
+        if (!isEditMode) return;
         try {
             await createBlock({
                 lesson_id: numericLessonId,
@@ -109,6 +113,7 @@ export default function LessonPage() {
     };
 
     const handleLineClick = (e: React.MouseEvent, position: number) => {
+        if (!isEditMode) return;
         e.stopPropagation();
         setPopupCoords({ x: e.clientX, y: e.clientY });
         setInsertPosition(position);
@@ -130,28 +135,41 @@ export default function LessonPage() {
         );
     }
 
+    const visibleBlocks = !isEditMode
+        ? blocks.filter(b => !(b.type === 'video' && !b.file_id))
+        : blocks;
+
     return (
         <div className="space-y-2">
-            <div className="flex items-center gap-4">
-                <Button
-                    variant="ghost"
-                    className="rounded-full"
-                    onClick={() => navigate(-1)}
-                >
-                    <ChevronLeft className="h-5 w-5" />
-                </Button>
-
-                {isLoadingLesson ? (
-                    <Skeleton className="h-8 w-48" />
-                ) : (
-                    <motion.h1
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-3xl font-bold text-gray-100"
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <Button
+                        variant="ghost"
+                        className="rounded-full"
+                        onClick={() => navigate(-1)}
                     >
-                        {lesson?.name}
-                    </motion.h1>
-                )}
+                        <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    {isLoadingLesson ? (
+                        <Skeleton className="h-8 w-48" />
+                    ) : (
+                        <motion.h1
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-3xl font-bold text-gray-100"
+                        >
+                            {lesson?.name}
+                        </motion.h1>
+                    )}
+                </div>
+                <Button
+                    variant={isEditMode ? 'light' : 'ghost'}
+                    onClick={() => setIsEditMode((prev) => !prev)}
+                    className="flex items-center gap-2 h-10 px-4 min-w-[120px]"
+                >
+                    {isEditMode ? <Check /> : <Edit />}
+                    <span>{isEditMode ? 'Сохранить' : 'Редактировать'}</span>
+                </Button>
             </div>
 
             {blocksError && <div className="text-red-400 p-8">{blocksError}</div>}
@@ -173,23 +191,26 @@ export default function LessonPage() {
                         >
 
                             <div className="relative h-5">
-                                <div
-                                    className={`absolute inset-0 flex items-center justify-center ${!isLoadingBlocks && blocks.length === 0
-                                        ? "opacity-100 animate-pulse"
-                                        : "opacity-0 hover:opacity-100 transition-opacity"
-                                        } cursor-pointer`}
-                                    onClick={(e) => handleLineClick(e, 0)}
-                                >
-                                    <div className="flex-1 h-0.5 bg-white rounded-full" />
-                                </div>
+                                {isEditMode &&
+                                    <div
+                                        className={`absolute inset-0 flex items-center justify-center ${!isLoadingBlocks && blocks.length === 0
+                                            ? "opacity-100 animate-pulse"
+                                            : "opacity-0 hover:opacity-100 transition-opacity"
+                                            } cursor-pointer`}
+                                        onClick={(e) => handleLineClick(e, 0)}
+                                    >
+                                        <div className="flex-1 h-0.5 bg-white rounded-full" />
+                                    </div>
+                                }
                             </div>
 
 
 
-                            {blocks.map((block, index) => (
+                            {visibleBlocks.map((block, index) => (
                                 <React.Fragment key={block.id}>
                                     <SortableBlock
                                         block={block}
+                                        isEditMode={isEditMode}
                                         onDelete={async () => {
                                             await removeBlock({ id: block.id });
                                             await refetchBlocks();
@@ -204,12 +225,14 @@ export default function LessonPage() {
                                     // }}
                                     />
                                     <div className="relative h-5">
-                                        <div
-                                            className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-                                            onClick={(e) => handleLineClick(e, index + 1)}
-                                        >
-                                            <div className="flex-1 h-0.5 bg-white rounded-full" />
-                                        </div>
+                                        {isEditMode &&
+                                            <div
+                                                className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                                                onClick={(e) => handleLineClick(e, index + 1)}
+                                            >
+                                                <div className="flex-1 h-0.5 bg-white rounded-full" />
+                                            </div>
+                                        }
                                     </div>
                                 </React.Fragment>
                             ))}
@@ -282,6 +305,13 @@ function BlockTypePopup({
                 <Video className="h-5 w-5 text-blue-400" />
                 <span className="text-sm">Видео</span>
             </button>
+            <button
+                onClick={() => onSelect('test')}
+                className="p-2 hover:bg-cgray-600 rounded-lg flex items-center gap-2 w-20"
+            >
+                <SquareGanttChartIcon className="h-5 w-5 text-orange-600" />
+                <span className="text-sm">Тест</span>
+            </button>
         </motion.div>
     );
 }
@@ -291,10 +321,12 @@ function SortableBlock({
     onDelete,
     onUpdate,
     // onFileUpload,
+    isEditMode,
 }: {
     block: Block;
     onDelete: () => void;
     onUpdate: (payload: UpdateBlockRequest) => void;
+    isEditMode: boolean
     // onFileUpload: (file: File) => Promise<number>;
 }) {
     const {
@@ -316,6 +348,7 @@ function SortableBlock({
     return (
         <div ref={setNodeRef} style={style}>
             <BlockSection
+                isEditMode={isEditMode}
                 block={block}
                 dragAttributes={attributes}
                 dragListeners={listeners}
@@ -334,12 +367,14 @@ function BlockSection({
     onDelete,
     onUpdate,
     // onFileUpload,
+    isEditMode,
 }: {
     block: Block;
     dragAttributes: any;
     dragListeners: any;
     onDelete: () => void;
     onUpdate: (payload: UpdateBlockRequest) => void;
+    isEditMode: boolean
     // onFileUpload: (file: File) => Promise<number>;
 }) {
     return (
@@ -351,6 +386,7 @@ function BlockSection({
                     dragListeners={dragListeners}
                     onDelete={onDelete}
                     onUpdate={onUpdate}
+                    isEditMode={isEditMode}
                 />
             ) : block.type === 'video' ? (
                 <VideoBlock
@@ -359,9 +395,17 @@ function BlockSection({
                     dragListeners={dragListeners}
                     onDelete={onDelete}
                     onUpdate={onUpdate}
+                    isEditMode={isEditMode}
                 />
             ) : block.type === 'test' ? (
-                <div>Test Block</div>
+                <TestBlock
+                    block={block}
+                    dragAttributes={dragAttributes}
+                    dragListeners={dragListeners}
+                    onDelete={onDelete}
+                    onUpdate={onUpdate}
+                    isEditMode={isEditMode}
+                />
             ) : null}
         </div>
     );
@@ -373,12 +417,14 @@ function TextBlock({
     dragListeners,
     onDelete,
     onUpdate,
+    isEditMode,
 }: {
     block: Block;
     dragAttributes: any;
     dragListeners: any;
     onDelete: () => void;
     onUpdate: (payload: UpdateBlockRequest) => void;
+    isEditMode: boolean
 }) {
     const [isEditing, setIsEditing] = useState(false);
     const [content, setContent] = useState(block.content || '');
@@ -390,22 +436,27 @@ function TextBlock({
 
     return (
         <>
-            <button
-                className="absolute -left-8 top-[1rem] flex opacity-0 group-hover:opacity-100 hover:bg-cgray-600 p-1 rounded z-10"
-                {...dragAttributes}
-                {...dragListeners}
-            >
-                <GripVertical className="h-5 w-5 cursor-grab text-cgray-200" />
-            </button>
+            {isEditMode &&
+                <div>
+                    <button
+                        className="absolute -left-8 top-[1rem] flex opacity-0 group-hover:opacity-100 hover:bg-cgray-600 p-1 rounded z-10"
+                        {...dragAttributes}
+                        {...dragListeners}
+                    >
+                        <GripVertical className="h-5 w-5 cursor-grab text-cgray-200" />
+                    </button>
 
-            <div className="absolute -right-8 top-[1rem] flex opacity-0 group-hover:opacity-100 z-10">
-                <button
-                    onClick={onDelete}
-                    className="text-red-500 cursor-pointer hover:text-red-400 p-1"
-                >
-                    <Trash size={20} />
-                </button>
-            </div>
+                    <div className="absolute -right-8 top-[1rem] flex opacity-0 group-hover:opacity-100 z-10">
+                        <button
+                            onClick={onDelete}
+                            className="text-red-500 cursor-pointer hover:text-red-400 p-1"
+                        >
+                            <Trash size={20} />
+                        </button>
+                    </div>
+                </div>
+            }
+
 
             <motion.div
                 initial={{ opacity: 0 }}
@@ -421,7 +472,7 @@ function TextBlock({
                 ) : (
                     <div
                         className="text-gray-100 prose prose-invert max-w-none min-h-[4rem] p-2 cursor-text"
-                        onClick={() => setIsEditing(true)}
+                        onClick={() => isEditMode && setIsEditing(true)}
                     >
                         <div dangerouslySetInnerHTML={{ __html: content }} />
                     </div>
@@ -437,12 +488,14 @@ function VideoBlock({
     dragListeners,
     onDelete,
     onUpdate,
+    isEditMode,
 }: {
     block: Block;
     dragAttributes: any;
     dragListeners: any;
     onDelete: () => void;
     onUpdate: (payload: UpdateBlockRequest) => void;
+    isEditMode: boolean;
 }) {
     const [fileId, setFileId] = useState(block.file_id);
     const [isHovered, setIsHovered] = useState(false);
@@ -509,19 +562,23 @@ function VideoBlock({
         >
             <div className="flex justify-start">
                 <div className="relative w-auto h-auto">
-                    <button
-                        className="absolute -left-8 top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 hover:bg-cgray-600 p-1 rounded z-10"
-                        {...dragAttributes}
-                        {...dragListeners}
-                    >
-                        <GripVertical className="h-5 w-5 cursor-grab text-cgray-200" />
-                    </button>
-                    <button
-                        onClick={onDelete}
-                        className="absolute -right-8 top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 z-10 text-red-500 cursor-pointer hover:text-red-400 p-1"
-                    >
-                        <Trash size={20} />
-                    </button>
+                    {isEditMode &&
+                        <div>
+                            <button
+                                className="absolute -left-8 top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 hover:bg-cgray-600 p-1 rounded z-10"
+                                {...dragAttributes}
+                                {...dragListeners}
+                            >
+                                <GripVertical className="h-5 w-5 cursor-grab text-cgray-200" />
+                            </button>
+                            <button
+                                onClick={onDelete}
+                                className="absolute -right-8 top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 z-10 text-red-500 cursor-pointer hover:text-red-400 p-1"
+                            >
+                                <Trash size={20} />
+                            </button>
+                        </div>
+                    }
                     {fileId ? (
                         <video
                             controls={isHovered}
@@ -582,6 +639,55 @@ function VideoBlock({
     );
 }
 
+function TestBlock({
+    block,
+    dragAttributes,
+    dragListeners,
+    onDelete,
+    onUpdate,
+    isEditMode,
+}: {
+    block: Block;
+    dragAttributes: any;
+    dragListeners: any;
+    onDelete: () => void;
+    onUpdate: (payload: UpdateBlockRequest) => void;
+    isEditMode: boolean;
+}) {
+    return (
+        <>
+            {isEditMode &&
+                <div>
+                    <button
+                        className="absolute -left-8 top-[1rem] flex opacity-0 group-hover:opacity-100 hover:bg-cgray-600 p-1 rounded z-10"
+                        {...dragAttributes}
+                        {...dragListeners}
+                    >
+                        <GripVertical className="h-5 w-5 cursor-grab text-cgray-200" />
+                    </button>
+
+                    <div className="absolute -right-8 top-[1rem] flex opacity-0 group-hover:opacity-100 z-10">
+                        <button
+                            onClick={onDelete}
+                            className="text-red-500 cursor-pointer hover:text-red-400 p-1"
+                        >
+                            <Trash size={20} />
+                        </button>
+                    </div>
+                </div>
+            }
+
+
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="bg-cgray-700 rounded-lg p-4 flex justify-between items-center"
+            >
+                <span className="text-gray-100">Тестовый блок (id: {block.id})</span>
+            </motion.div>
+        </>
+    );
+}
 
 const CircularProgress = ({
     progress,
