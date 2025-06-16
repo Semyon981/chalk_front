@@ -7,27 +7,30 @@ interface DialogProps {
 
 export default function Dialog({ isOpen, title, onClose, children }: DialogProps) {
     if (!isOpen) return null;
+
     return (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div 
-                className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
-                onClick={onClose} 
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            {/* Оверлей с размытием */}
+            <div
+                className="fixed inset-0 bg-black/50 backdrop-blur-md"
+                onClick={onClose}
             />
-            <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-10 w-full max-w-lg p-6">
+
+            {/* Контейнер диалога */}
+            <div className="bg-cgray-800 rounded-lg p-6 w-full max-w-md z-10">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold text-white">{title}</h2>
-                    <button 
-                        onClick={onClose} 
-                        className="text-gray-400 hover:text-white transition-colors"
+                    <h2 className="text-xl font-semibold">{title}</h2>
+                    <button
+                        onClick={onClose}
+                        className="text-cgray-100 hover:text-cgray-200 text-2xl transition-colors"
                         aria-label="Close dialog"
                     >
-                        <span className="text-2xl">×</span>
+                        ×
                     </button>
                 </div>
-                
-                <div className="text-gray-200">
-                    {children}
-                </div>
+
+                {/* Дочерний контент без дополнительной обертки */}
+                {children}
             </div>
         </div>
     );

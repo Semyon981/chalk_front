@@ -51,24 +51,27 @@ export function CourseParticipantsModal({ isOpen, courseId, members, onClose }: 
         <Dialog isOpen={isOpen} onClose={onClose} title="Список участников курса">
             <div className="mb-4">
                 <select
-                    className="w-full bg-gray-700 border border-gray-600 text-white p-2 rounded-md outline-none"
+                    className={`w-full p-2 bg-cgray-700 border rounded-md outline-none ${!selectedUser ? 'text-cgray-400' : 'text-cgray-100'
+                        }`}
                     value={selectedUser ?? ''}
                     onChange={e => setSelectedUser(Number(e.target.value))}
                 >
-                    <option value="" disabled className="text-gray-400">Выберите пользователя</option>
+                    <option value="" disabled className="text-cgray-400">
+                        Выберите пользователя
+                    </option>
                     {available.map(u => (
-                        <option 
-                            key={u.user.id} 
+                        <option
+                            key={u.user.id}
                             value={u.user.id}
-                            className="bg-gray-800 text-white"
+                            className="bg-cgray-800 text-cgray-100"
                         >
-                            {members.find(m => m.user.id === u.user.id)!.user.name} ({members.find(m => m.user.id === u.user.id)!.user.email})
+                            {u.user.name} ({u.user.email})
                         </option>
                     ))}
                 </select>
-                <Button 
-                    variant="light" 
-                    size="sm" 
+                <Button
+                    variant="light"
+                    size="sm"
                     className="mt-2 w-full"
                     onClick={handleEnroll}
                     disabled={!selectedUser}
@@ -80,19 +83,19 @@ export function CourseParticipantsModal({ isOpen, courseId, members, onClose }: 
                 {enrolled.map(u => {
                     const member = members.find(m => m.user.id === u.user.id)!;
                     return (
-                        <div 
-                            key={u.user.id} 
-                            className="flex justify-between items-center p-3 bg-gray-700 rounded-lg transition-colors hover:bg-gray-600"
+                        <div
+                            key={u.user.id}
+                            className="flex justify-between items-center p-3 bg-cgray-700 rounded-lg transition-colors hover:bg-cgray-600"
                         >
                             <div className='flex gap-3 items-center'>
                                 <Avatar name={member.user.name} size="sm" />
-                                <div className="text-gray-200 flex flex-col">
+                                <div className="text-cgray-100 flex flex-col">
                                     <span className="font-medium">{member.user.name}</span>
-                                    <span className="text-gray-400 text-sm">{member.user.email}</span>
+                                    <span className="text-cgray-400 text-sm">{member.user.email}</span>
                                 </div>
                             </div>
-                            <button 
-                                onClick={() => handleUnenroll(u.user.id)} 
+                            <button
+                                onClick={() => handleUnenroll(u.user.id)}
                                 className="text-red-400 hover:text-red-300 p-1 transition-colors"
                                 aria-label="Удалить участника"
                             >
