@@ -1,5 +1,5 @@
 import axios, { AxiosError, type AxiosRequestConfig } from 'axios';
-import type { RefreshSessionRequest, RefreshSessionResponse } from './types';
+import type { RefreshSessionResponse } from './types';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || '/api';
 
