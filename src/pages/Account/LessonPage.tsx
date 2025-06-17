@@ -8,7 +8,7 @@ import { useBlocks } from '@/hooks/useBlocks';
 import { type Account, type BlockType, type UpdateBlockRequest } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { type Block, type CreateBlockRequest } from '@/api/types';
-import { ChevronLeft, GripVertical, Plus, X, Edit, Check, Upload, Video, Text, Trash, SquareGanttChartIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, GripVertical, Plus, X, Edit, Check, Upload, Video, Text, Trash, SquareGanttChartIcon } from 'lucide-react';
 import {
     DndContext,
     closestCenter,
@@ -104,6 +104,7 @@ export default function LessonPage() {
                 lesson_id: numericLessonId,
                 type,
                 content: type === 'text' ? '' : '',
+                name: type === 'test' ? 'Новый тест' : undefined,
                 order_idx: position,
             });
             await refetchBlocks();
@@ -639,56 +640,6 @@ function VideoBlock({
     );
 }
 
-function TestBlock({
-    block,
-    dragAttributes,
-    dragListeners,
-    onDelete,
-    onUpdate,
-    isEditMode,
-}: {
-    block: Block;
-    dragAttributes: any;
-    dragListeners: any;
-    onDelete: () => void;
-    onUpdate: (payload: UpdateBlockRequest) => void;
-    isEditMode: boolean;
-}) {
-    return (
-        <>
-            {isEditMode &&
-                <div>
-                    <button
-                        className="absolute -left-8 top-[1rem] flex opacity-0 group-hover:opacity-100 hover:bg-cgray-600 p-1 rounded z-10"
-                        {...dragAttributes}
-                        {...dragListeners}
-                    >
-                        <GripVertical className="h-5 w-5 cursor-grab text-cgray-200" />
-                    </button>
-
-                    <div className="absolute -right-8 top-[1rem] flex opacity-0 group-hover:opacity-100 z-10">
-                        <button
-                            onClick={onDelete}
-                            className="text-red-500 cursor-pointer hover:text-red-400 p-1"
-                        >
-                            <Trash size={20} />
-                        </button>
-                    </div>
-                </div>
-            }
-
-
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="bg-cgray-700 rounded-lg p-4 flex justify-between items-center"
-            >
-                <span className="text-gray-100">Тестовый блок (id: {block.id})</span>
-            </motion.div>
-        </>
-    );
-}
-
 const CircularProgress = ({
     progress,
     className,
@@ -746,3 +697,87 @@ const CircularProgress = ({
         </svg>
     );
 };
+
+function TestBlock({
+    block,
+    dragAttributes,
+    dragListeners,
+    onDelete,
+    onUpdate,
+    isEditMode,
+}: {
+    block: Block;
+    dragAttributes: any;
+    dragListeners: any;
+    onDelete: () => void;
+    onUpdate: (payload: UpdateBlockRequest) => void;
+    isEditMode: boolean;
+}) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [name, setName] = useState(block.name || '');
+
+    const handleUpdate = async () => {
+        setIsEditing(false);
+        if (name.trim() !== block.name) {
+            await onUpdate({ id: block.id, name });
+        }
+    };
+
+    return (
+        <>
+            {isEditMode &&
+                <div>
+                    <button
+                        className="absolute -left-8 top-[1rem] flex opacity-0 group-hover:opacity-100 hover:bg-cgray-600 p-1 rounded z-10"
+                        {...dragAttributes}
+                        {...dragListeners}
+                    >
+                        <GripVertical className="h-5 w-5 cursor-grab text-cgray-200" />
+                    </button>
+
+                    <div className="absolute -right-8 top-[1rem] flex opacity-0 group-hover:opacity-100 z-10">
+                        <button
+                            onClick={onDelete}
+                            className="text-red-500 cursor-pointer hover:text-red-400 p-1"
+                        >
+                            <Trash size={20} />
+                        </button>
+                    </div>
+                </div>
+            }
+
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="bg-cgray-700 rounded-lg p-4 flex items-center"
+            >
+                <SquareGanttChartIcon className="h-5 w-5 text-orange-600" />
+
+                {isEditing ? (
+                    <input
+                        className="ml-2 bg-transparent border-b border-gray-500 text-gray-100 focus:outline-none"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        onBlur={handleUpdate}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                handleUpdate();
+                            } else if (e.key === 'Escape') {
+                                setIsEditing(false);
+                                setName(block.name || '');
+                            }
+                        }}
+                        autoFocus
+                    />
+                ) : (
+                    <span
+                        className="text-gray-100 pl-2 cursor-text"
+                        onClick={() => isEditMode && setIsEditing(true)}
+                    >
+                        {block.name}
+                    </span>
+                )}
+            </motion.div>
+        </>
+    );
+}

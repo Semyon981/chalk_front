@@ -73,10 +73,10 @@ export interface GetBlocksByLessonIDResponse { blocks: Block[]; }
 
 // Block
 export type BlockType = 'text' | 'video' | 'test';
-export interface Block { id: number; lesson_id: number; order_idx: number; type: BlockType; content?: string; file_id?: number; }
-export interface CreateBlockRequest { lesson_id: number; type: BlockType; content?: string; file_id?: number; order_idx?: number; }
+export interface Block { id: number; lesson_id: number; order_idx: number; type: BlockType; content?: string; file_id?: number; name?: string; }
+export interface CreateBlockRequest { lesson_id: number; type: BlockType; content?: string; file_id?: number; name?: string; order_idx?: number; }
 export interface CreateBlockResponse { id: number; }
-export interface UpdateBlockRequest { id: number; content?: string; file_id?: number; }
+export interface UpdateBlockRequest { id: number; content?: string; file_id?: number; name?: string; }
 export interface UpdateBlockOrderRequest { id: number; order_idx: number; }
 export interface RemoveBlockRequest { id: number; }
 
@@ -90,63 +90,31 @@ export interface AcceptInviteRequest { key: string; }
 
 // Tests
 
-export interface IDResponse {
-  id: number;
-}
+export interface IDResponse { id: number;}
 
-export interface IDRequest {
-  id: number;
-}
-export interface Test {
-  id: number;
-  questions: TestQuestion[];
-}
+export interface IDRequest { id: number;}
+export interface Test { id: number; questions: TestQuestion[]; }
 
-export interface TestQuestion {
-  id: number;
-  question: string;
-  answers: TestQuestionAnswer[];
-}
+export interface TestQuestion { id: number; question: string; answers: TestQuestionAnswer[]; }
 
-export interface TestQuestionAnswer {
-  id: number;
-  answer: string;
-  is_correct: boolean;
-}
+export interface TestQuestionAnswer { id: number; answer: string; is_correct: boolean; }
 
-export interface GetTestByIDResponse {
-  test: Test;
-}
+export interface GetTestByIDResponse { test: Test; }
 
 // Reuses existing SuccessResponse: export interface SuccessResponse { success: boolean; }
 
-export interface CreateQuestionRequest {
-  test_id: number;
-  question: string;
-}
+export interface CreateQuestionRequest { test_id: number; question: string; }
 
-export interface UpdateQuestionRequest {
-  id: number;
-  question: string;
-}
+export interface UpdateQuestionRequest { id: number; question: string; }
 
-export interface CreateAnswerRequest {
-  question_id: number;
-  answer: string;
-  is_correct: boolean;
-}
+export interface CreateAnswerRequest { question_id: number; answer: string; is_correct: boolean; }
 
-export interface UpdateAnswerRequest {
-  id: number;
-  answer?: string;
-  is_correct?: boolean;
-}
+export interface UpdateAnswerRequest { id: number; answer?: string; is_correct?: boolean; }
 
 
 // Test attempts
 
-export interface Attempt {
-  id: number;
+export interface Attempt { id: number;
   user_id: number;
   started_at: string;      // ISO 8601 timestamp
   finished_at?: string;    // ISO 8601 timestamp or undefined
@@ -167,34 +135,21 @@ export interface AttemptQuestionAnswer {
   is_correct?: boolean;
 }
 
-export interface StartAttemptRequest {
-  test_id: number;
-}
+export interface StartAttemptRequest { test_id: number; }
 
-export interface FinishAttemptRequest {
-  id: number;
-}
+export interface FinishAttemptRequest { id: number; }
 
-export interface SetAnswerSelectionRequest {
-  attempt_answer_id: number;
-  is_selected: boolean;
-}
+export interface SetAnswerSelectionRequest { attempt_answer_id: number; is_selected: boolean;}
 
-export interface GetCurrentAttemptResponse {
-  attempt: Attempt;
-}
+export interface GetCurrentAttemptResponse { attempt: Attempt; }
 
-export interface GetFinishedAttemptsResponse {
-  attempts: Attempt[];
-}
+export interface GetFinishedAttemptsResponse { attempts: Attempt[]; }
 
 export interface TestPasser {
-  user_id: number;
+user_id: number;
   name: string;
   email: string;
   attempts_count: number;
 }
 
-export interface GetTestPassersResponse {
-  passers: TestPasser[];
-}
+export interface GetTestPassersResponse { passers: TestPasser[]; }
