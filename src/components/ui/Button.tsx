@@ -18,15 +18,15 @@ export const Button: React.FC<ButtonProps> = ({
     
     const variantStyles = {
         default: disabled 
-            ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+            ? "bg-gray-700 text-gray-400"
             : "bg-gray-500 text-white hover:bg-gray-600 cursor-pointer",
         
         ghost: disabled
-            ? "border-gray-600 text-gray-400 cursor-not-allowed"
+            ? "border-gray-600 text-gray-400"
             : "border-white text-white hover:bg-white hover:text-gray-900 cursor-pointer border",
         
         light: disabled
-            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+            ? "bg-gray-300 text-gray-500"
             : "bg-white text-gray-900 hover:bg-gray-300 cursor-pointer"
     };
 

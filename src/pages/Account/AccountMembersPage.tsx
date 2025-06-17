@@ -1,6 +1,6 @@
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useOutletContext } from 'react-router-dom';
-import { type Account, type AccountMember, type Invite } from '@/api/types';
+import { type Account, type AccountMember, type Invite, type User } from '@/api/types';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { useEffect, useState, useRef } from 'react';
@@ -10,8 +10,9 @@ import { removeInvite } from '@/api/invites';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { getUserRoleInAccount } from '@/lib/utils';
 import { removeAccountMember, updateAccountMember } from '@/api/accounts';
-import { EditIcon, TrashIcon } from 'lucide-react';
+import { BookOpenTextIcon, EditIcon, TrashIcon } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
+import { ParticipantCoursesModal } from '@/components/ParticipantCoursesModal';
 
 export function AccountMembersPage() {
     const { account, members, refetchMembers } = useOutletContext<{ account: Account, members: AccountMember[], refetchMembers: () => void }>();
@@ -37,6 +38,8 @@ export function AccountMembersPage() {
     const [openOptionsId, setOpenOptionsId] = useState<number | null>(null);
     const [editingRoleId, setEditingRoleId] = useState<number | null>(null);
     const [newRole, setNewRole] = useState<string>('');
+    const [isParticipantCoursesModalOpen, setIsParticipantCoursesModalOpen] = useState(false);
+    const [selectedParticipant, setSelectedParticipant] = useState<User>({ id: 0, name: '', email: '' });
     const optionsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -62,7 +65,6 @@ export function AccountMembersPage() {
         if (userRole === 'owner' || userRole === 'admin') {
             const member = members.find(m => m.user.id === memberId);
             if (!member) return;
-            if (member.role === 'owner' || (userRole === 'admin' && member.role === 'admin')) return; // админ не может действовать над владельцем и админом
             if (member.user.id === user?.id) return; // нельзя действовать над собой
             setOpenOptionsId(openOptionsId === memberId ? null : memberId);
         }
@@ -110,6 +112,11 @@ export function AccountMembersPage() {
         });
     };
 
+    const handleInitiateMemberCourses = (member: User) => {
+        setSelectedParticipant(member);
+        setIsParticipantCoursesModalOpen(true);
+    }
+
     return (
         <div className="space-y-6">
             {/* Секция участников */}
@@ -121,8 +128,7 @@ export function AccountMembersPage() {
                         <div
                             key={member.user.id}
                             className={`relative flex items-center p-4 bg-cgray-700 rounded-lg hover:bg-cgray-800 transition-colors ${
-                                (userRole === 'owner' || userRole === 'admin') && member.role !== 'owner' && member.user.id !== user?.id
-                                || (userRole === 'admin' && member.role !== 'admin')
+                                (userRole === 'owner' || userRole === 'admin') && member.user.id !== user?.id
                                 ? 'cursor-pointer'
                                 : ''
                             }`}
@@ -168,6 +174,14 @@ export function AccountMembersPage() {
                                     {/* Меню опций */}
                                     {openOptionsId === member.user.id && (
                                         <div ref={optionsRef} className="absolute right-0 top-20 bg-cgray-800 border border-cgray-600 p-4 rounded-lg space-y-2 z-50">
+                                            {(userRole === 'owner' || userRole === 'admin') && (
+                                                <button
+                                                    className="flex items-center text-left w-full text-sm text-white cursor-pointer hover:bg-cgray-600 p-2 rounded"
+                                                    onClick={() => handleInitiateMemberCourses(member.user)}
+                                                >
+                                                    <BookOpenTextIcon className="mr-2" color='#2b7fff'/> Курсы пользователя
+                                                </button>
+                                            )}
                                             {userRole === 'owner' && (
                                                 <button
                                                     className="flex items-center text-left w-full text-sm text-white cursor-pointer hover:bg-cgray-600 p-2 rounded"
@@ -176,12 +190,14 @@ export function AccountMembersPage() {
                                                     <EditIcon className="mr-2" /> Изменить роль
                                                 </button>
                                             )}
-                                            <button
-                                                className="flex items-center text-left w-full text-sm text-red-500 cursor-pointer hover:bg-cgray-600 p-2 rounded"
-                                                onClick={() => handleRemoveMember(member.user.id)}
-                                            >
-                                                <TrashIcon className="mr-2" /> Удалить из аккаунта
-                                            </button>
+                                            {userRole === 'owner' && (
+                                                <button
+                                                    className="flex items-center text-left w-full text-sm text-red-500 cursor-pointer hover:bg-cgray-600 p-2 rounded"
+                                                    onClick={() => handleRemoveMember(member.user.id)}
+                                                >
+                                                    <TrashIcon className="mr-2" /> Удалить из аккаунта
+                                                </button>
+                                            )}
                                         </div>
                                     )}
                                 </>
@@ -244,6 +260,14 @@ export function AccountMembersPage() {
                             setConfirmConfig(prev => ({ ...prev, isOpen: false }));
                         }}
                         onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+                    />
+
+                    <ParticipantCoursesModal 
+                        isOpen={isParticipantCoursesModalOpen}
+                        onClose={() => setIsParticipantCoursesModalOpen(false)}
+                        accountId={account.id}
+                        userId={selectedParticipant?.id}
+                        userName={selectedParticipant?.name}
                     />
                 </div>
             )}

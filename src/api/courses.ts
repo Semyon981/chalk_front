@@ -1,6 +1,6 @@
 import api from './api';
 import type {
-  Course, CreateCourseRequest, CreateCourseResponse,
+  CreateCourseRequest, CreateCourseResponse,
   GetCourseByIDResponse, EnrollUserRequest, SuccessResponse,
   UpdateCourseRequest, UpdateCourseResponse, RemoveCourseRequest,
   GetCourseParticipantsResponse, GetModulesByCourseIDResponse, RemoveCourseResponse

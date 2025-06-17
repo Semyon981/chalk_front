@@ -23,7 +23,7 @@ export function MyCoursesPage() {
                         to={`/accounts/${account.name}/courses/${course.id}`}
                         className="p-4 h-30 bg-cgray-600/50 rounded-lg hover:bg-cgray-500/70 transition-colors"
                     >
-                        <h3 className="text-lg font-medium text-gray-100">{course.name}</h3>
+                        <h3 className="text-lg font-medium text-gray-100 overflow-hidden text-ellipsis">{course.name}</h3>
                         {/* <p className="text-sm text-gray-400 mt-2">{course.description}</p> */}
                     </Link>
                 ))
