@@ -1,7 +1,6 @@
 import api from './api';
-import baseURL from "./api"
 import type { UploadFileResponse } from './types';
-import axios, { type AxiosProgressEvent } from 'axios';
+import { type AxiosProgressEvent } from 'axios';
 
 export const uploadFile = (
   file: File,
@@ -26,6 +25,5 @@ export const downloadFile = (id: number) =>
 
 
 export const getFileUrl = (id: number)=>{
-     return `${api.defaults.baseURL}/files/${id}`
+  return `${api.defaults.baseURL}/files/${id}`
 }
- 
