@@ -14,7 +14,7 @@ export const Button: React.FC<ButtonProps> = ({
     disabled,
     ...props
 }) => {
-    const baseStyles = "rounded-2xl font-medium transition-all duration-200";
+    const baseStyles = "box-border rounded-2xl font-medium transition-all duration-200";
     
     const variantStyles = {
         default: disabled 
@@ -31,8 +31,8 @@ export const Button: React.FC<ButtonProps> = ({
     };
 
     const sizeStyles = {
-        sm: "px-4 py-2 text-sm",
-        lg: "px-6 py-3 text-lg"
+        sm: "px-4 py-2 text-sm min-h-[38px]",
+        lg: "px-6 py-3 text-lg min-h-[40px]"
     };
 
     return (

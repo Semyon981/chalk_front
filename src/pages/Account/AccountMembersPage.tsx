@@ -159,10 +159,10 @@ export function AccountMembersPage() {
                                             <option key={roleOption} value={roleOption}>{roleOption}</option>
                                         ))}
                                     </select>
-                                    <Button variant="light" size="sm" onClick={() => handleRoleSelect(member.user.id)}>
+                                    <Button variant="light" onClick={() => handleRoleSelect(member.user.id)}>
                                         Подтвердить
                                     </Button>
-                                    <Button variant="ghost" size="sm" onClick={() => setEditingRoleId(null)}>
+                                    <Button variant="ghost" onClick={() => setEditingRoleId(null)}>
                                         Отмена
                                     </Button>
                                 </div>
