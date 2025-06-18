@@ -7,7 +7,7 @@ import { useLesson } from '@/hooks/useLesson';
 import { useBlocks } from '@/hooks/useBlocks';
 import { type Account, type BlockType, type TestQuestion, type TestQuestionAnswer, type UpdateBlockRequest } from '@/api/types';
 import { Button } from '@/components/ui/Button';
-import { type Block } from '@/api/types';
+import { type Block, type AccountMember } from '@/api/types';
 import { ChevronLeft, GripVertical, X, Edit, Check, Upload, Video, Text, Trash, SquareGanttChartIcon, Pencil, Plus, ChevronRight } from 'lucide-react';
 import {
     DndContext,
@@ -36,13 +36,28 @@ import { getFileUrl, uploadFile } from '@/api/files';
 import React from 'react';
 import TiptapEditor from '@/components/TiptapEditor';
 import axios from 'axios';
+import { useAuth } from '@/context/AuthContext';
+import { getUserRoleInAccount } from '@/lib/utils';
 import { createTestAnswer, createTestQuestion, getTestInfo, removeTestAnswer, removeTestQuestion, updateTestAnswer, updateTestQuestion } from '@/api/tests';
 
 export default function LessonPage() {
     const { lessonId } = useParams<{ lessonId: string }>();
-    const { account } = useOutletContext<{ account: Account }>();
+    const { account, members, refetchMembers } = useOutletContext<{ account: Account, members: AccountMember[], refetchMembers: () => void }>();
+    const { user } = useAuth();
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [isCheckingRole, setIsCheckingRole] = useState(true);
+
     const numericLessonId = parseInt(lessonId || '0', 10);
     const navigate = useNavigate();
+
+
+    useEffect(() => {
+        if (user && account && members) {
+            const role = getUserRoleInAccount(user.id, members);
+            setUserRole(role);
+            setIsCheckingRole(false);
+        }
+    }, [user, account, members]);
 
     const {
         lesson,
@@ -164,14 +179,16 @@ export default function LessonPage() {
                         </motion.h1>
                     )}
                 </div>
-                <Button
-                    variant={isEditMode ? 'light' : 'ghost'}
-                    onClick={() => setIsEditMode((prev) => !prev)}
-                    className="flex items-center gap-2 h-10 px-4 min-w-[120px]"
-                >
-                    {isEditMode ? <Check /> : <Edit />}
-                    <span>{isEditMode ? 'Сохранить' : 'Редактировать'}</span>
-                </Button>
+                {!isCheckingRole && (userRole == 'admin' || userRole === 'owner') &&
+                    <Button
+                        variant={isEditMode ? 'light' : 'ghost'}
+                        onClick={() => setIsEditMode((prev) => !prev)}
+                        className="flex items-center gap-2 h-10 px-4 min-w-[120px]"
+                    >
+                        {isEditMode ? <Check /> : <Edit />}
+                        <span>{isEditMode ? 'Сохранить' : 'Редактировать'}</span>
+                    </Button>
+                }
             </div>
 
             {blocksError && <div className="text-red-400 p-8">{blocksError}</div>}
@@ -734,13 +751,13 @@ function TestBlock({
         if (!isEditMode) setIsEditing(false);
     }, [isEditMode]);
 
-    
+
     useEffect(() => {
         if (currentQuestion) {
             setEditingQuestion(currentQuestion.question);
         }
     }, [currentQuestion]);
-    
+
     const handleUpdateName = async () => {
         setIsBlockNameEditing(false);
         if (name.trim() !== block.name) {
@@ -864,119 +881,118 @@ function TestBlock({
                             <span className="text-gray-100 text-lg" onClick={() => isEditMode && setIsBlockNameEditing(true)}>{block.name}</span>
                         )}
                     </div>
-                        {isEditMode ? (
-                            <Button variant={isEditing ? 'light' : 'ghost'} className="flex items-center gap-1" onClick={() => setIsEditing(p => !p)}>
-                                {isEditing ?  <><Check size={16} /> Сохранить</> :<><Pencil size={16} /> Редактировать</>}
-                            </Button>
-                        ) : (
-                            <Button variant="light">Начать тест</Button>
-                        )}
+                    {isEditMode ? (
+                        <Button variant={isEditing ? 'light' : 'ghost'} className="flex items-center gap-1" onClick={() => setIsEditing(p => !p)}>
+                            {isEditing ? <><Check size={16} /> Сохранить</> : <><Pencil size={16} /> Редактировать</>}
+                        </Button>
+                    ) : (
+                        <Button variant="light">Начать тест</Button>
+                    )}
                 </div>
 
-            {isEditing && (
-                <div className="border-t border-cgray-600 pt-4 flex flex-col">
-                    {!!testQuestions.length && (
-                        <div className="space-y-4 mb-4">
-                            <div className="flex items-center justify-between mb-4">
-                                <button
-                                    disabled={currentIndex === 0}
-                                    onClick={() => setCurrentIndex(i => i - 1)}
-                                    className={`transition-transform duration-150 hover:scale-125 ${currentIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'text-white'}`}
-                                >
-                                    <ChevronLeft size={24} />
-                                </button>
+                {isEditing && (
+                    <div className="border-t border-cgray-600 pt-4 flex flex-col">
+                        {!!testQuestions.length && (
+                            <div className="space-y-4 mb-4">
+                                <div className="flex items-center justify-between mb-4">
+                                    <button
+                                        disabled={currentIndex === 0}
+                                        onClick={() => setCurrentIndex(i => i - 1)}
+                                        className={`transition-transform duration-150 hover:scale-125 ${currentIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'text-white'}`}
+                                    >
+                                        <ChevronLeft size={24} />
+                                    </button>
 
-                                <span className="text-gray-300 font-semibold">Вопрос {currentIndex + 1}</span>
+                                    <span className="text-gray-300 font-semibold">Вопрос {currentIndex + 1}</span>
 
-                                <button
-                                    disabled={currentIndex === testQuestions.length - 1}
-                                    onClick={() => setCurrentIndex(i => i + 1)}
-                                    className={`transition-transform duration-150 hover:scale-125 ${currentIndex === testQuestions.length - 1 ? 'opacity-50 cursor-not-allowed' : 'text-white'}`}
-                                >
-                                    <ChevronRight size={24} />
-                                </button>
-                            </div>
+                                    <button
+                                        disabled={currentIndex === testQuestions.length - 1}
+                                        onClick={() => setCurrentIndex(i => i + 1)}
+                                        className={`transition-transform duration-150 hover:scale-125 ${currentIndex === testQuestions.length - 1 ? 'opacity-50 cursor-not-allowed' : 'text-white'}`}
+                                    >
+                                        <ChevronRight size={24} />
+                                    </button>
+                                </div>
 
 
-                            <input
-                                className="w-full bg-transparent border-b border-cgray-500 focus:outline-none text-gray-100 mb-7"
-                                value={editingQuestion}
-                                onChange={e => setEditingQuestion(e.target.value)}
-                                onBlur={() => {
-                                    if (editingQuestion !== currentQuestion.question) {
-                                        updateQuestion(editingQuestion);
-                                    }
-                                }}
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
+                                <input
+                                    className="w-full bg-transparent border-b border-cgray-500 focus:outline-none text-gray-100 mb-7"
+                                    value={editingQuestion}
+                                    onChange={e => setEditingQuestion(e.target.value)}
+                                    onBlur={() => {
                                         if (editingQuestion !== currentQuestion.question) {
                                             updateQuestion(editingQuestion);
                                         }
-                                    } else if (e.key === 'Escape') {
-                                        setEditingQuestion(currentQuestion.question);
-                                    }
-                                }}
-                                onFocus={() => setEditingQuestion(currentQuestion.question)}
-                            />
-
-                            <div className="space-y-2">
-                                {currentQuestion.answers.map(a => (
-                                    <div key={a.id} className="flex items-center gap-2">
-                                        <input
-                                            className="flex-1 bg-cgray-800 p-2 rounded text-gray-100"
-                                            value={editingAnswers[a.id] ?? a.answer}
-                                            onChange={e =>
-                                                setEditingAnswers(prev => ({ ...prev, [a.id]: e.target.value }))
+                                    }}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            if (editingQuestion !== currentQuestion.question) {
+                                                updateQuestion(editingQuestion);
                                             }
-                                            onBlur={() => {
-                                                if ((editingAnswers[a.id] ?? a.answer) !== a.answer) {
-                                                    updateAnswer(a.id, { answer: editingAnswers[a.id] ?? '' });
+                                        } else if (e.key === 'Escape') {
+                                            setEditingQuestion(currentQuestion.question);
+                                        }
+                                    }}
+                                    onFocus={() => setEditingQuestion(currentQuestion.question)}
+                                />
+
+                                <div className="space-y-2">
+                                    {currentQuestion.answers.map(a => (
+                                        <div key={a.id} className="flex items-center gap-2">
+                                            <input
+                                                className="flex-1 bg-cgray-800 p-2 rounded text-gray-100"
+                                                value={editingAnswers[a.id] ?? a.answer}
+                                                onChange={e =>
+                                                    setEditingAnswers(prev => ({ ...prev, [a.id]: e.target.value }))
                                                 }
-                                            }}
-                                            onKeyDown={e => {
-                                                if (e.key === 'Enter') {
-                                                    e.preventDefault();
+                                                onBlur={() => {
                                                     if ((editingAnswers[a.id] ?? a.answer) !== a.answer) {
                                                         updateAnswer(a.id, { answer: editingAnswers[a.id] ?? '' });
                                                     }
-                                                } else if (e.key === 'Escape') {
-                                                    setEditingAnswers(prev => ({ ...prev, [a.id]: a.answer }));
+                                                }}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        if ((editingAnswers[a.id] ?? a.answer) !== a.answer) {
+                                                            updateAnswer(a.id, { answer: editingAnswers[a.id] ?? '' });
+                                                        }
+                                                    } else if (e.key === 'Escape') {
+                                                        setEditingAnswers(prev => ({ ...prev, [a.id]: a.answer }));
+                                                    }
+                                                }}
+                                                onFocus={() =>
+                                                    setEditingAnswers(prev => ({ ...prev, [a.id]: a.answer }))
                                                 }
-                                            }}
-                                            onFocus={() =>
-                                                setEditingAnswers(prev => ({ ...prev, [a.id]: a.answer }))
-                                            }
-                                />
+                                            />
 
-                                        <button
-                                            onClick={() => {
-                                                updateAnswer(a.id, { is_correct: !a.is_correct });
-                                            }}
-                                            className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all ${
-                                                a.is_correct ? 'bg-green-500 border-green-500' : 'bg-cgray-500 border-cgray-400'
-                                            }`}
-                                        >
-                                            {a.is_correct && <Check className="text-white" size={20} />}
-                                        </button>
+                                            <button
+                                                onClick={() => {
+                                                    updateAnswer(a.id, { is_correct: !a.is_correct });
+                                                }}
+                                                className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all ${a.is_correct ? 'bg-green-500 border-green-500' : 'bg-cgray-500 border-cgray-400'
+                                                    }`}
+                                            >
+                                                {a.is_correct && <Check className="text-white" size={20} />}
+                                            </button>
 
-                                        <Button variant="ghost" onClick={() => removeAnswer(a.id)}>
-                                            <Trash size={16} />
-                                        </Button>
-                                    </div>
-                                ))}
+                                            <Button variant="ghost" onClick={() => removeAnswer(a.id)}>
+                                                <Trash size={16} />
+                                            </Button>
+                                        </div>
+                                    ))}
 
-                                <Button size="sm" onClick={addAnswer}  className="flex items-center gap-1 mt-3"><Plus className="mr-1" size={16} /> Добавить ответ</Button>
+                                    <Button size="sm" onClick={addAnswer} className="flex items-center gap-1 mt-3"><Plus className="mr-1" size={16} /> Добавить ответ</Button>
+                                </div>
+                                <Button variant="ghost" className="mt-10 flex items-center gap-4 w-full" onClick={() => removeQuestion(currentQuestion.id)}>
+                                    <Trash color='#ff6467' /> Удалить вопрос
+                                </Button>
                             </div>
-                            <Button variant="ghost" className="mt-10 flex items-center gap-4 w-full" onClick={() => removeQuestion(currentQuestion.id)}>
-                                <Trash color='#ff6467' /> Удалить вопрос
-                            </Button>
-                        </div>
-                    )}
-                    <Button onClick={addQuestion} className="flex items-center gap-1"><Plus className="mr-2" /> Добавить вопрос</Button>
-                </div>
-            )}
-        </motion.div>
-    </>
+                        )}
+                        <Button onClick={addQuestion} className="flex items-center gap-1"><Plus className="mr-2" /> Добавить вопрос</Button>
+                    </div>
+                )}
+            </motion.div>
+        </>
     );
 }

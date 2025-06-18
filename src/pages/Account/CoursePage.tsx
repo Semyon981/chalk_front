@@ -6,9 +6,10 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useCourse } from '@/hooks/useCourse';
 import { useModules } from '@/hooks/useModules';
 import { useLessons } from '@/hooks/useLessons';
+import { useAuth } from '@/context/AuthContext';
 import { type Account } from '@/api/types';
 import { Button } from '@/components/ui/Button';
-import { type Module, type Lesson } from '@/api/types';
+import { type Module, type Lesson, type AccountMember } from '@/api/types';
 import { ChevronLeft, GripVertical, X, Edit, Check, Trash } from 'lucide-react';
 import {
     DndContext,
@@ -43,16 +44,29 @@ import {
     setLessonPosition,
 } from '@/api/lessons';
 import React from 'react';
+import { getUserRoleInAccount } from '@/lib/utils';
 
 export default React.memo(CoursePage);
 
 function CoursePage() {
     const { courseId } = useParams<{ courseId: string }>();
-    const { account } = useOutletContext<{ account: Account }>();
+    const { account, members, refetchMembers } = useOutletContext<{ account: Account, members: AccountMember[], refetchMembers: () => void }>();
+    const { user } = useAuth();
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [isCheckingRole, setIsCheckingRole] = useState(true);
     const numericCourseId = parseInt(courseId || '0', 10);
     const navigate = useNavigate();
 
     const [isEditMode, setIsEditMode] = useState(false);
+
+    useEffect(() => {
+        if (user && account && members) {
+            const role = getUserRoleInAccount(user.id, members);
+            setUserRole(role);
+            setIsCheckingRole(false);
+        }
+    }, [user, account, members]);
+
 
     const {
         course,
@@ -151,14 +165,16 @@ function CoursePage() {
                     )}
                 </div>
 
-                <Button
-                    variant={isEditMode ? 'light' : 'ghost'}
-                    onClick={() => setIsEditMode((prev) => !prev)}
-                    className="flex items-center gap-2 h-10 px-4 min-w-[120px]"
-                >
-                    {isEditMode ? <Check /> : <Edit />}
-                    <span>{isEditMode ? 'Сохранить' : 'Редактировать'}</span>
-                </Button>
+                {!isCheckingRole && (userRole == 'admin' || userRole === 'owner') &&
+                    <Button
+                        variant={isEditMode ? 'light' : 'ghost'}
+                        onClick={() => setIsEditMode((prev) => !prev)}
+                        className="flex items-center gap-2 h-10 px-4 min-w-[120px]"
+                    >
+                        {isEditMode ? <Check /> : <Edit />}
+                        <span>{isEditMode ? 'Сохранить' : 'Редактировать'}</span>
+                    </Button>
+                }
             </div>
 
             {modulesError && <div className="text-red-400 p-8">{modulesError}</div>}
