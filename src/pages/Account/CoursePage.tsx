@@ -9,7 +9,7 @@ import { useLessons } from '@/hooks/useLessons';
 import { type Account } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { type Module, type Lesson } from '@/api/types';
-import { ChevronLeft, GripVertical, X, Edit, Check } from 'lucide-react';
+import { ChevronLeft, GripVertical, X, Edit, Check, Trash } from 'lucide-react';
 import {
     DndContext,
     closestCenter,
@@ -51,6 +51,8 @@ function CoursePage() {
     const { account } = useOutletContext<{ account: Account }>();
     const numericCourseId = parseInt(courseId || '0', 10);
     const navigate = useNavigate();
+
+    const [isEditMode, setIsEditMode] = useState(false);
 
     const {
         course,
@@ -117,9 +119,7 @@ function CoursePage() {
                 {courseError}
                 <div className="mt-4">
                     <Button variant="ghost">
-                        <Link to={`/accounts/${account.name}/c`}>
-                            Вернуться к курсам
-                        </Link>
+                        <Link to={`/accounts/${account.name}/c`}>Вернуться к курсам</Link>
                     </Button>
                 </div>
             </div>
@@ -128,26 +128,37 @@ function CoursePage() {
 
     return (
         <div className="space-y-2">
-            <div className="flex items-center gap-4">
-                <Button
-                    variant="ghost"
-                    className="rounded-full"
-                    onClick={() => navigate(-1)}
-                >
-                    <ChevronLeft className="h-5 w-5" />
-                </Button>
-
-                {isLoadingCourse ? (
-                    <Skeleton className="h-8 w-48" />
-                ) : (
-                    <motion.h1
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-3xl font-bold text-gray-100"
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <Button
+                        variant="ghost"
+                        className="rounded-full"
+                        onClick={() => navigate(-1)}
                     >
-                        {course?.name}
-                    </motion.h1>
-                )}
+                        <ChevronLeft className="h-5 w-5" />
+                    </Button>
+
+                    {isLoadingCourse ? (
+                        <Skeleton className="h-8 w-48" />
+                    ) : (
+                        <motion.h1
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-3xl font-bold text-gray-100"
+                        >
+                            {course?.name}
+                        </motion.h1>
+                    )}
+                </div>
+
+                <Button
+                    variant={isEditMode ? 'light' : 'ghost'}
+                    onClick={() => setIsEditMode((prev) => !prev)}
+                    className="flex items-center gap-2 h-10 px-4 min-w-[120px]"
+                >
+                    {isEditMode ? <Check /> : <Edit />}
+                    <span>{isEditMode ? 'Сохранить' : 'Редактировать'}</span>
+                </Button>
             </div>
 
             {modulesError && <div className="text-red-400 p-8">{modulesError}</div>}
@@ -168,20 +179,23 @@ function CoursePage() {
                             strategy={verticalListSortingStrategy}
                         >
                             <div className="relative h-5">
-                                <div
-                                    className={`absolute inset-0 flex items-center justify-center ${!isLoadingModules && modules.length === 0
-                                        ? "opacity-100 animate-pulse"
-                                        : "opacity-0 hover:opacity-100 transition-opacity"
-                                        } cursor-pointer`}
-                                    onClick={() => handleAddModule(0)}
-                                >
-                                    <div className="flex-1 h-0.5 bg-white rounded-full" />
-                                </div>
+                                {isEditMode &&
+                                    <div
+                                        className={`absolute inset-0 flex items-center justify-center ${!isLoadingModules && modules.length === 0
+                                            ? 'opacity-100 animate-pulse'
+                                            : 'opacity-0 hover:opacity-100 transition-opacity'
+                                            } cursor-pointer`}
+                                        onClick={() => handleAddModule(0)}
+                                    >
+                                        <div className="flex-1 h-0.5 bg-white rounded-full" />
+                                    </div>
+                                }
                             </div>
 
                             {modules.map((module, index) => (
                                 <React.Fragment key={module.id}>
                                     <SortableModule
+                                        isEditMode={isEditMode}
                                         module={module}
                                         accountName={account.name}
                                         courseId={numericCourseId}
@@ -195,12 +209,14 @@ function CoursePage() {
                                         }}
                                     />
                                     <div className="relative h-5">
-                                        <div
-                                            className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-                                            onClick={() => handleAddModule(index + 1)}
-                                        >
-                                            <div className="flex-1 h-0.5 bg-white rounded-full" />
-                                        </div>
+                                        {isEditMode &&
+                                            <div
+                                                className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                                                onClick={() => handleAddModule(index + 1)}
+                                            >
+                                                <div className="flex-1 h-0.5 bg-white rounded-full" />
+                                            </div>
+                                        }
                                     </div>
                                 </React.Fragment>
                             ))}
@@ -209,7 +225,6 @@ function CoursePage() {
                 )}
             </div>
         </div>
-
     );
 }
 
@@ -219,32 +234,27 @@ function SortableModule({
     courseId,
     onDelete,
     onUpdate,
+    isEditMode
 }: {
     module: Module;
     accountName: string;
     courseId: number;
     onDelete: () => void;
     onUpdate: (name: string) => void;
+    isEditMode: boolean;
 }) {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({ id: module.id });
-
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+        useSortable({ id: module.id });
     const style = {
         transform: CSS.Translate.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
         zIndex: isDragging ? 100 : 0,
     };
-
     return (
         <div ref={setNodeRef} style={style}>
             <ModuleSection
+                isEditMode={isEditMode}
                 module={module}
                 accountName={accountName}
                 courseId={courseId}
@@ -265,6 +275,7 @@ function ModuleSection({
     dragListeners,
     onDelete,
     onUpdate,
+    isEditMode,
 }: {
     module: Module;
     accountName: string;
@@ -273,6 +284,7 @@ function ModuleSection({
     dragListeners: any;
     onDelete: () => void;
     onUpdate: (name: string) => void;
+    isEditMode: boolean;
 }) {
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState(module.name);
@@ -285,53 +297,55 @@ function ModuleSection({
     };
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="bg-cgray-700 rounded-lg p-6 pb-2 relative group"
-        >
-            <div className="flex items-center gap-2 mb-2">
-                <button
-                    className="hover:bg-cgray-600 cursor-grab p-1 rounded -ml-2"
-                    {...dragAttributes}
-                    {...dragListeners}
-                >
-                    <GripVertical className="h-5 w-5 text-cgray-200" />
-                </button>
-
-                {isEditing ? (
-                    <input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        onBlur={handleUpdate}
-                        onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
-                        autoFocus
-                        className="bg-cgray-800 text-cgray-50 px-2 py-1 rounded flex-1"
-                    />
-                ) : (
-                    <h2 className="text-xl font-semibold text-cgray-50 flex-1">
-                        {name}
-                    </h2>
-                )}
-
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="group relative">
+            {isEditMode &&
+                <>
                     <button
-                        onClick={() => (isEditing ? handleUpdate() : setIsEditing(true))}
-                        className="text-gray-400 hover:text-gray-200 p-1 rounded"
+                        className="absolute -left-8 top-9 flex opacity-0 group-hover:opacity-100 p-1 cursor-grab rounded -translate-y-1/2 z-10"
+                        {...dragAttributes}
+                        {...dragListeners}
                     >
-                        {isEditing ? <Check size={18} /> : <Edit size={18} />}
+                        <GripVertical className="h-6 w-6 text-cgray-200" />
                     </button>
+
                     <button
                         onClick={onDelete}
-                        className="text-cgray-200 hover:text-cgray-100 p-0 rounded"
+                        className="absolute -right-8 top-9 flex opacity-0 group-hover:opacity-100 -translate-y-1/2 z-10 p-1 cursor-pointer hover:text-red-400 text-red-500"
                     >
-                        <X size={30} />
+                        <Trash size={24} />
                     </button>
-                </div>
-            </div>
+                </>
+            }
 
-            <LessonsList module={module} courseId={courseId} accountName={accountName} />
-        </motion.div>
+
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="bg-cgray-700 rounded-lg pl-8 pr-8 pt-5 pb-2"
+            >
+                <div className="flex items-center gap-2 mb-2">
+                    {isEditing ? (
+                        <input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            onBlur={handleUpdate}
+                            onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
+                            autoFocus
+                            className=" text-cgray-50 text-xl font-semibold flex-1 focus:outline-none border-b border-gray-500"
+                        />
+                    ) : (
+                        <h2
+                            onClick={() => isEditMode && setIsEditing(true)}
+                            className="text-xl font-semibold text-cgray-50 flex-1 cursor-text"
+                        >
+                            {name}
+                        </h2>
+                    )}
+                </div>
+
+                <LessonsList module={module} courseId={courseId} accountName={accountName} isEditMode={isEditMode} />
+            </motion.div>
+        </div>
     );
 }
 
@@ -339,24 +353,22 @@ function LessonsList({
     module,
     courseId,
     accountName,
+    isEditMode,
 }: {
     module: Module;
     courseId: number;
     accountName: string;
+    isEditMode: boolean;
 }) {
     const {
         lessons: initialLessons,
         isLoading,
-        // error,
         refetch: refetchLessons,
     } = useLessons(module.id);
-
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const sensors = useSensors(
         useSensor(PointerSensor),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
 
     useEffect(() => {
@@ -374,23 +386,16 @@ function LessonsList({
         setLessons(newLessons);
 
         try {
-            await setLessonPosition({
-                id: Number(active.id),
-                order_idx: newIndex,
-            });
+            await setLessonPosition({ id: Number(active.id), order_idx: newIndex });
             await refetchLessons();
-        } catch (error) {
+        } catch {
             setLessons(initialLessons || []);
         }
     };
 
     const handleAddLesson = async (position: number) => {
         try {
-            await createLesson({
-                module_id: module.id,
-                name: 'Новый урок',
-                order_idx: position,
-            });
+            await createLesson({ module_id: module.id, name: 'Новый урок', order_idx: position });
             await refetchLessons();
         } catch (error) {
             console.error('Failed to create lesson:', error);
@@ -398,35 +403,32 @@ function LessonsList({
     };
 
     return (
-        <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragLesson}
-        >
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragLesson}>
             <SortableContext items={lessons} strategy={verticalListSortingStrategy}>
+
                 <div className="relative h-4">
-                    <div
-                        className={`absolute inset-0 flex items-center justify-center ${!isLoading && lessons.length === 0
-                            ? "opacity-100 animate-pulse"
-                            : "opacity-0 hover:opacity-100 transition-opacity"
-                            } cursor-pointer`}
-                        onClick={() => handleAddLesson(0)}
-                    >
-                        <div className="flex-1 h-0.25 bg-white rounded-full" />
-                    </div>
+                    {isEditMode &&
+                        <div
+                            className={`absolute inset-0 flex items-center justify-center ${!isLoading && lessons.length === 0
+                                ? 'opacity-100 animate-pulse'
+                                : 'opacity-0 hover:opacity-100 transition-opacity'
+                                } cursor-pointer`}
+                            onClick={() => handleAddLesson(0)}
+                        >
+                            <div className="flex-1 h-0.25 bg-white rounded-full" />
+                        </div>
+                    }
                 </div>
 
                 <div className="space-y-0 relative">
                     {isLoading ? (
                         <Skeleton className="h-8 w-auto rounded-full" />
                     ) : (
-                        <motion.h1
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                        >
+                        <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                             {lessons.map((lesson, index) => (
                                 <React.Fragment key={lesson.id}>
                                     <SortableLesson
+                                        isEditMode={isEditMode}
                                         lesson={lesson}
                                         accountName={accountName}
                                         courseId={courseId}
@@ -440,19 +442,19 @@ function LessonsList({
                                         }}
                                     />
                                     <div className="relative h-4">
-                                        <div
-                                            className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-                                            onClick={() => handleAddLesson(index + 1)}
-                                        >
-                                            <div className="flex-1 h-0.25 bg-white rounded-full" />
-                                        </div>
+                                        {isEditMode &&
+                                            <div
+                                                className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                                                onClick={() => handleAddLesson(index + 1)}
+                                            >
+                                                <div className="flex-1 h-0.25 bg-white rounded-full" />
+                                            </div>
+                                        }
                                     </div>
                                 </React.Fragment>
                             ))}
                         </motion.h1>
                     )}
-
-
                 </div>
             </SortableContext>
         </DndContext>
@@ -465,90 +467,84 @@ function SortableLesson({
     courseId,
     onDelete,
     onUpdate,
+    isEditMode,
 }: {
     lesson: Lesson;
     accountName: string;
     courseId: number;
     onDelete: () => void;
     onUpdate: (name: string) => void;
+    isEditMode: boolean;
 }) {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({ id: lesson.id });
-
-    const style = {
-        transform: CSS.Translate.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
-        zIndex: isDragging ? 100 : 0,
-    };
-
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+        useSortable({ id: lesson.id });
+    const style = { transform: CSS.Translate.toString(transform), transition, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 100 : 0 };
     return (
         <div ref={setNodeRef} style={style}>
-            <LessonItem
-                lesson={lesson}
-                accountName={accountName}
-                courseId={courseId}
-                dragAttributes={attributes}
-                dragListeners={listeners}
-                onDelete={onDelete}
-                onUpdate={onUpdate}
-            />
+            <LessonItem lesson={lesson} dragAttributes={attributes} dragListeners={listeners} onDelete={onDelete} onUpdate={onUpdate} isEditMode={isEditMode} />
         </div>
     );
 }
 
 function LessonItem({
     lesson,
-    // accountName,
-    // courseId,
     dragAttributes,
     dragListeners,
     onDelete,
     onUpdate,
+    isEditMode,
 }: {
     lesson: Lesson;
-    accountName: string;
-    courseId: number;
     dragAttributes: any;
     dragListeners: any;
     onDelete: () => void;
     onUpdate: (name: string) => void;
+    isEditMode: boolean;
 }) {
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState(lesson.name);
+    const [isHovered, setIsHovered] = useState(false);
     const navigate = useNavigate();
 
     const handleUpdate = async () => {
         setIsEditing(false);
-        if (name !== lesson.name) {
-            await onUpdate(name);
-        }
+        if (name !== lesson.name) await onUpdate(name);
     };
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+        <div
+            className="relative w-full mx-auto"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
         >
-            <div className="block bg-cgray-800 hover:bg-cgray-600 cursor-pointer rounded-lg p-3 transition-colors group relative"
-                onClick={() => navigate(`lessons/${lesson.id}`)}
-            >
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 flex-1">
-                        <button
-                            className="hover:bg-cgray-700 p-1 cursor-grab rounded -ml-2"
-                            {...dragAttributes}
-                            {...dragListeners}
-                        >
-                            <GripVertical className="h-4 w-4 text-cgray-200" />
-                        </button>
+            {isEditMode &&
+                <>
+                    <button {...dragAttributes} {...dragListeners} className={`absolute -left-7 top-1/2 transform -translate-y-1/2 p-1 rounded z-10 ${isHovered ? 'opacity-100 hover:bg-cgray-700 cursor-grab' : 'opacity-0'} transition-opacity`}>
+                        <GripVertical className="h-5 w-5 text-cgray-200" />
+                    </button>
+                    <button onClick={onDelete} className={`absolute -right-7 top-1/2 transform -translate-y-1/2 z-10 p-1 text-red-500 cursor-pointer ${isHovered ? 'opacity-100 hover:text-red-400' : 'opacity-0'} transition-opacity`}>
+                        <Trash size={20} />
+                    </button>
+                </>
+            }
 
+
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <div
+                    className="bg-cgray-800 hover:bg-cgray-600 cursor-pointer rounded-lg p-3 transition-colors"
+                    onClick={() => {
+                        if (!isEditMode) {
+                            navigate(`lessons/${lesson.id}`)
+                            return
+                        }
+
+                        if (!isEditing) {
+                            setIsEditing(true)
+                        }
+                    }}
+                // onClick={() => { () => navigate(`lessons/${lesson.id}`) }}
+                >
+                    <div className="flex items-center gap-2">
                         {isEditing ? (
                             <input
                                 value={name}
@@ -556,36 +552,14 @@ function LessonItem({
                                 onBlur={handleUpdate}
                                 onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
                                 autoFocus
-                                className="bg-cgray-700 text-gray-100 px-2 py-1 rounded flex-1"
+                                className="text-gray-100 flex-1 focus:outline-none border-b border-gray-500"
                             />
                         ) : (
                             <span className="text-cgray-50 flex-1">{name}</span>
                         )}
                     </div>
-
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                isEditing ? handleUpdate() : setIsEditing(true);
-                            }}
-                            className="text-cgray-200 hover:text-cgray-100 p-1 rounded"
-                        >
-                            {isEditing ? <Check size={16} /> : <Edit size={16} />}
-                        </button>
-
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDelete();
-                            }}
-                            className="text-cgray-200 hover:text-cgray-100 p-0 rounded"
-                        >
-                            <X size={20} />
-                        </button>
-                    </div>
                 </div>
-            </div>
-        </motion.div>
+            </motion.div>
+        </div>
     );
 }
