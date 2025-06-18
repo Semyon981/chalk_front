@@ -15,6 +15,7 @@ import { MyCoursesPage } from './pages/Account/MyCoursesPage';
 import CoursePage from './pages/Account/CoursePage';
 import LessonPage from './pages/Account/LessonPage';
 import AcceptInvitePage from './pages/AcceptInvitePage';
+import TestPassersPage from './pages/Account/TestPassersPage';
 
 const PrivateRoute = ({ children }: { children: React.JSX.Element }) => {
   const { user, isLoading } = useAuth();
@@ -32,7 +33,7 @@ const PrivateInviteRoute = ({ children }: { children: React.JSX.Element }) => {
   const { user, isLoading } = useAuth();
   const [searchParams] = useSearchParams();
   const inviteKey = searchParams.get('key');
-  
+
   if (!inviteKey) {
     return <Navigate to="/" replace />;
   }
@@ -40,7 +41,7 @@ const PrivateInviteRoute = ({ children }: { children: React.JSX.Element }) => {
   if (isLoading) return <Loader />;
 
   if (!user) {
-      return <Navigate to={`/login?key=${inviteKey}`} replace />;
+    return <Navigate to={`/login?key=${inviteKey}`} replace />;
   }
 
   return children;
@@ -56,13 +57,13 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<Home />} />
 
-          <Route 
-              path="/acceptinvite" 
-              element={
-                <PrivateInviteRoute>
-                  <AcceptInvitePage />
-                </PrivateInviteRoute>
-              } 
+          <Route
+            path="/acceptinvite"
+            element={
+              <PrivateInviteRoute>
+                <AcceptInvitePage />
+              </PrivateInviteRoute>
+            }
           />
 
           <Route path="/create-account" element={
@@ -84,6 +85,11 @@ function App() {
             <Route path="users" element={
               <PrivateRoute>
                 <AccountMembersPage />
+              </PrivateRoute>} />
+
+            <Route path="tests/:testID/passers" element={
+              <PrivateRoute>
+                <TestPassersPage />
               </PrivateRoute>} />
 
 

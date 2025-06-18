@@ -571,7 +571,7 @@ function LessonItem({
                                 className="text-gray-100 flex-1 focus:outline-none border-b border-gray-500"
                             />
                         ) : (
-                            <span className="text-cgray-50 flex-1">{name}</span>
+                            <span className={`text-cgray-50 ${isEditMode ? "cursor-text" : ""} flex-1`}>{name}</span>
                         )}
                     </div>
                 </div>

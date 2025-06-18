@@ -97,7 +97,7 @@ export interface Test { id: number; questions: TestQuestion[]; }
 
 export interface TestQuestion { id: number; question: string; answers: TestQuestionAnswer[]; }
 
-export interface TestQuestionAnswer { id: number; answer: string; is_correct: boolean; }
+export interface TestQuestionAnswer { id: number; answer: string; is_correct: boolean; is_selected?: boolean }
 
 export interface GetTestByIDResponse { test: Test; }
 
@@ -119,21 +119,9 @@ export interface Attempt { id: number;
   started_at: string;      // ISO 8601 timestamp
   finished_at?: string;    // ISO 8601 timestamp or undefined
   points?: number;
-  questions: AttemptQuestion[];
+  questions: TestQuestion[];
 }
 
-export interface AttemptQuestion {
-  id: number;
-  question: string;
-  answers: AttemptQuestionAnswer[];
-}
-
-export interface AttemptQuestionAnswer {
-  id: number;
-  answer: string;
-  is_selected: boolean;
-  is_correct?: boolean;
-}
 
 export interface StartAttemptRequest { test_id: number; }
 

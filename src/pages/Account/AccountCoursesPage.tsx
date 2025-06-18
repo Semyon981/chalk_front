@@ -1,3 +1,4 @@
+// src/pages/Account/AccountCoursesPage.tsx
 import { useAccountCourses } from '@/hooks/useAccountCourses';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Link } from 'react-router-dom';
@@ -43,7 +44,7 @@ export function AccountCoursesPage() {
                     <>
                         <button
                             onClick={() => setIsCreateModalOpen(true)}
-                            className="p-4 h-30 border-2 border-dashed border-white rounded-lg hover:bg-white/10 transition-colors flex items-center justify-center"
+                            className="p-4 h-30 border-2 border-dashed cursor-pointer border-white rounded-lg hover:bg-white/10 transition-colors flex items-center justify-center"
                         >
                             <span className="text-white text-4xl">+</span>
                         </button>
