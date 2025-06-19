@@ -29,9 +29,7 @@ import {
     SquareGanttChartIcon,
     Pencil,
     Loader2,
-    ArrowLeft,
-    ListTodo,
-    Users
+    ArrowLeft
 } from "lucide-react";
 import {
     DndContext,
@@ -69,7 +67,6 @@ import {
     getFinishedAttempts,
     startAttempt,
 } from "@/api/tests";
-import ToggleButton from "@/components/ui/ToggleButton";
 
 export default function LessonPage() {
     const { lessonId } = useParams<{ lessonId: string }>();
@@ -203,7 +200,7 @@ export default function LessonPage() {
 
     useEffect(() => {
         const handleScroll = () => {
-            if (window.scrollY > 0) {
+            if (window.scrollY > 35) {
                 setScrolled(true);
             } else {
                 setScrolled(false);
@@ -214,56 +211,63 @@ export default function LessonPage() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-
     return (
-        <div className="px-25 relative">
+        <div className="relative -mt-13">
 
-            <div className="flex items-center h-auto">
-
-                <div className={`fixed cursor-pointer transition-transform duration-300 z-40 ${scrolled ? '-translate-x-15' : 'translate-x-0'}`}>
-                    <ArrowLeft
+            <div className="sticky top-19 z-5 py-2">
+                <div className="w-full relative z-5 flex justify-between">
+                    {/* Стрелка - fixed к левому краю экрана */}
+                    <button
+                        className={`text-gray-100 hover:text-white cursor-pointer p-1 rounded-full transition-all duration-300 ${scrolled ? 'px-8' : 'px-24'
+                            }`}
                         onClick={() => navigate(-1)}
-                        className="h-8 w-8"
-                    />
-                </div>
-
-                {isLoadingLesson ? (
-                    <Skeleton className="h-8 w-48" />
-                ) : (
-                    <motion.h1
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.05 }}
-                        className={`text-3xl font-bold text-gray-100 transition-transform duration-300 ${scrolled ? 'translate-x-0' : 'translate-x-10'}`}
                     >
-                        {lesson?.name}
-                    </motion.h1>
-                )}
+                        <ArrowLeft className="h-8 w-8" />
+                    </button>
 
+                    {/* Название урока - по центру */}
 
-                <div className="flex ml-auto items-center">
-                    <div className={`fixed z-40 transition-transform duration-300 origin-center gap-2 flex ${scrolled ? '-rotate-90 translate-y-1/2 translate-x-2' : '-translate-x-2/2'}`}>
-
-                        <button
-                            onClick={() => setIsEditMode(prev => !prev)}
-                            className={`${scrolled ? 'rotate-90' : ''} ${isEditMode ? 'bg-white text-black' : 'text-white hover:text-cgray-50'} flex items-center justify-center cursor-pointer h-10 w-10 rounded-full transition-transform-colors duration-300`}
-                        >
-                            <Pencil size={25} />
-                        </button>
-
-                        <button
-                            onClick={() => lesson && handleRemoveLesson(lesson.id, lesson.name)}
-                            className={`text-red-500 transition-transform-colors duration-300 hover:text-red-400 ${scrolled ? 'rotate-90' : ''} p-2 rounded-full cursor-pointer`}
-                        >
-                            <Trash size={25} />
-                        </button>
-                    </div>
+                    {/* Кнопки - fixed к правому краю экрана */}
+                    {!isCheckingRole && (userRole == 'admin' || userRole === 'owner') && (
+                        <div className={`flex items-center gap-2 transition-all duration-300 ${scrolled ? 'pr-8 flex-col-reverse' : 'px-23'
+                            }`}>
+                            <button
+                                onClick={() => setIsEditMode(prev => !prev)}
+                                className={`${isEditMode
+                                    ? 'bg-white text-gray-900 hover:bg-gray-300'
+                                    : 'text-white hover:text-cgray-50'
+                                    } p-2 rounded-full transition-colors cursor-pointer`}
+                            >
+                                {isEditMode ? <Check size={25} /> : <Pencil size={25} />}
+                            </button>
+                            <button
+                                onClick={() => { lesson && handleRemoveLesson(lesson?.id, lesson?.name) }}
+                                className="text-red-500 hover:text-red-400 p-2 rounded-full cursor-pointer"
+                            >
+                                <Trash size={25} />
+                            </button>
+                        </div>
+                    )}
                 </div>
 
             </div>
 
+            <div className={`flex justify-start items-center transition-all duration-300 ${scrolled ? "px-25" : "px-37"}`}>
+                {isLoadingLesson ? (
+                    <Skeleton className="h-8 w-48" />
+                ) : (
+                    <motion.h1
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-3xl font-bold text-gray-100"
+                    >
+                        {lesson?.name}
+                    </motion.h1>
+                )}
+            </div>
+
             {/* Основной контент */}
-            <div className="w-full z-11">
+            <div className="w-full mt-4 px-25 z-11">
                 {blocksError && (
                     <div className="text-red-400 p-8">{blocksError}</div>
                 )}
@@ -302,50 +306,41 @@ export default function LessonPage() {
                                 </div>
 
                                 {visibleBlocks.map((block, index) => (
-                                    <motion.div
-                                        key={block.id}
-                                        layout
-                                        initial={{ opacity: 0, x: -500 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -500 }}
-                                        transition={{ duration: 0.05 }}
-                                    >
-                                        <React.Fragment key={block.id}>
-                                            <SortableBlock
-                                                block={block}
-                                                isEditMode={isEditMode}
-                                                onDelete={async () => {
-                                                    await removeBlock({ id: block.id });
-                                                    await refetchBlocks();
-                                                }}
-                                                onUpdate={async (
-                                                    payload: UpdateBlockRequest
-                                                ) => {
-                                                    await updateBlock(payload);
-                                                    await refetchBlocks();
-                                                }}
-                                            // onFileUpload={async (file: File) => {
-                                            //     const resp = await uploadFile(file);
-                                            //     return resp.data.id;
-                                            // }}
-                                            />
-                                            <div className="relative h-5">
-                                                {isEditMode && (
-                                                    <div
-                                                        className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-                                                        onClick={(e) =>
-                                                            handleLineClick(
-                                                                e,
-                                                                index + 1
-                                                            )
-                                                        }
-                                                    >
-                                                        <div className="flex-1 h-0.5 bg-white rounded-full" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </React.Fragment>
-                                    </motion.div>
+                                    <React.Fragment key={block.id}>
+                                        <SortableBlock
+                                            block={block}
+                                            isEditMode={isEditMode}
+                                            onDelete={async () => {
+                                                await removeBlock({ id: block.id });
+                                                await refetchBlocks();
+                                            }}
+                                            onUpdate={async (
+                                                payload: UpdateBlockRequest
+                                            ) => {
+                                                await updateBlock(payload);
+                                                await refetchBlocks();
+                                            }}
+                                        // onFileUpload={async (file: File) => {
+                                        //     const resp = await uploadFile(file);
+                                        //     return resp.data.id;
+                                        // }}
+                                        />
+                                        <div className="relative h-5">
+                                            {isEditMode && (
+                                                <div
+                                                    className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                                                    onClick={(e) =>
+                                                        handleLineClick(
+                                                            e,
+                                                            index + 1
+                                                        )
+                                                    }
+                                                >
+                                                    <div className="flex-1 h-0.5 bg-white rounded-full" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </React.Fragment>
                                 ))}
                             </SortableContext>
                         </DndContext>
@@ -372,7 +367,7 @@ export default function LessonPage() {
                 />
 
             </div>
-        </div >
+        </div>
     );
 }
 
@@ -851,12 +846,6 @@ function TestBlock({
     const [isLoading, setIsLoading] = useState(false);
     const [isContentLoading, setIsContentLoading] = useState(false);
 
-    const { account, members } = useOutletContext<{
-        account: Account;
-        members: AccountMember[];
-    }>();
-
-
     const isContentEdit = contentDisplayMode === "edit";
     const isContentPass = contentDisplayMode === "pass";
 
@@ -935,12 +924,6 @@ function TestBlock({
         }
     };
 
-    // if (isTestStarted && !isContentPass) {
-    //     setContentDisplayMode("pass")
-    // }
-
-    const navigate = useNavigate();
-
     return (
         <div className="group relative">
             {isEditMode && (
@@ -1004,24 +987,33 @@ function TestBlock({
                         )}
                     </div>
                     {isEditMode ? (
-                        <ToggleButton onToggle={() => setContentDisplayMode(isContentEdit ? null : "edit")} isToggled={isContentEdit}>
-                            <Pencil size={20} />
-                        </ToggleButton>
+                        <Button
+                            variant={isContentEdit ? "light" : "ghost"}
+                            className="flex items-center gap-1"
+                            onClick={() =>
+                                setContentDisplayMode(
+                                    isContentEdit ? null : "edit"
+                                )
+                            }
+                        >
+                            {isContentEdit ? (
+                                <>
+                                    <Check size={16} /> Сохранить
+                                </>
+                            ) : (
+                                <>
+                                    <Pencil size={16} /> Редактировать
+                                </>
+                            )}
+                        </Button>
                     ) : (
                         <div className="flex items-center gap-2">
-
-                            <ToggleButton onToggle={() => { navigate(`/accounts/${account.name}/tests/${block.id}/passers`) }}>
-                                <Users size={20} />
-                            </ToggleButton>
-                            {/* <Button
+                            <Button
                                 variant="ghost"
                                 onClick={() => handleViewAttempts()}
                             >
                                 Просмотр попыток
-                            </Button> */}
-                            <ToggleButton onToggle={handleViewAttempts} isToggled={contentDisplayMode === "view"}>
-                                <ListTodo size={20} />
-                            </ToggleButton>
+                            </Button>
                             {isLoading ? (
                                 <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
                             ) : isTestStarted && !isContentPass ? (
@@ -1031,21 +1023,21 @@ function TestBlock({
                                         setContentDisplayMode("pass")
                                     }
                                 >
-                                    Продолжить
+                                    Продолжить тест
                                 </Button>
                             ) : !isContentPass ? (
                                 <Button
                                     variant="light"
                                     onClick={handleStartTest}
                                 >
-                                    Начать
+                                    Начать тест
                                 </Button>
                             ) : (
                                 <Button
                                     variant="light"
                                     onClick={handleFinishTest}
                                 >
-                                    Завершить
+                                    Завершить тест
                                 </Button>
                             )}
                         </div>

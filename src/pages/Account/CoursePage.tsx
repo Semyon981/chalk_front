@@ -156,142 +156,187 @@ function CoursePage() {
             </div>
         );
     }
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        let lastScrollY = window.scrollY;
+
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+            const scrollingUp = currentScrollY < lastScrollY;
+            lastScrollY = currentScrollY;
+
+            if (scrollingUp && currentScrollY < 100) {
+                setScrolled(false);
+                return;
+            }
+
+            if (currentScrollY > 0) {
+                setScrolled(true);
+            } else {
+                setScrolled(false);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [scrolled]);
 
     return (
-        <div className="flex h-full px-25">
-            {/* Main Content with animated width */}
-            <motion.div
-                className="space-y-2"
-                initial={{ width: '100%' }}
-                // animate={{ width: showMembersPanel ? '100%' : '100%' }}
-                transition={{ duration: 1 }}
-            >
-                {/* Header */}
-                <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <button onClick={() => navigate(-1)} className="text-gray-100 hover:text-white cursor-pointer">
-                            <ArrowLeft className="h-8 w-8" />
+        <div className="px-25 relative">
+            <div className="flex items-center h-auto">
+                <div className={`fixed cursor-pointer transition-transform duration-300 z-40 ${scrolled ? '-translate-x-15' : 'translate-x-0'}`}>
+                    <ArrowLeft
+                        onClick={() => navigate(-1)}
+                        className="h-8 w-8"
+                    />
+                </div>
+
+                {isLoadingCourse ? (
+                    <Skeleton className="h-8 w-48" />
+                ) : (
+                    <motion.h1
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.05 }}
+                        className={`text-3xl font-bold text-gray-100 transition-transform duration-300 ${scrolled ? 'translate-x-0' : 'translate-x-10'}`}
+                    >
+                        {course?.name}
+                    </motion.h1>
+                )}
+
+                <div className="flex ml-auto items-center">
+                    <div className={`fixed z-40 transition-transform duration-300 origin-center flex items-center gap-2 ${scrolled ? '-rotate-90 translate-y-2/2 -translate-x-4' : '-translate-x-2/2'}`}>
+                        <button
+                            onClick={() => setIsEditMode(prev => !prev)}
+                            className={`${scrolled ? 'rotate-90' : ''} ${isEditMode ? 'bg-white text-black' : 'text-white hover:text-cgray-50'} flex items-center justify-center cursor-pointer h-10 w-10 rounded-full transition-transform-colors duration-300`}
+                        >
+                            <Pencil size={25} />
                         </button>
-                        {isLoadingCourse ? (
-                            <Skeleton className="h-8 w-48" />
+
+                        <button
+                            onClick={() => setShowMembersPanel(prev => !prev)}
+                            className={`${scrolled ? 'rotate-90' : ''} ${showMembersPanel ? 'bg-white text-black' : 'text-white hover:text-cgray-50'} flex items-center justify-center cursor-pointer h-10 w-10 rounded-full transition-transform-colors duration-300`}
+                        >
+                            <Users size={25} />
+                        </button>
+
+                        <button
+                            onClick={handleRemoveCourse}
+                            className={`text-red-500 transition-transform-colors duration-300 hover:text-red-400 ${scrolled ? 'rotate-90' : ''} p-2 rounded-full cursor-pointer`}
+                        >
+                            <Trash size={25} />
+                        </button>
+
+                    </div>
+                </div>
+
+
+
+            </div>
+
+
+
+            {/* Основной контент */}
+            <div className="flex h-full relative">
+                {/* Main Content with animated width */}
+                <motion.div
+                    className={`space-y-2 transition-all duration-300 z-20 ${showMembersPanel ? 'w-[70%]' : 'w-full'
+                        }`}
+                    // initial={{ width: '100%' }}
+                    transition={{ duration: 1 }}
+                >
+                    {/* Modules list */}
+                    {modulesError && <div className="text-red-400 p-8">{modulesError}</div>}
+                    <div className="space-y-0">
+                        {isLoadingModules ? (
+                            Array.from({ length: 3 }).map((_, idx) => <Skeleton key={idx} className="h-20 w-full rounded-lg" />)
                         ) : (
-                            <motion.h1
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="text-3xl font-bold text-gray-100"
-                            >
-                                {course?.name}
-                            </motion.h1>
+                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragModule}>
+                                <SortableContext items={modules} strategy={verticalListSortingStrategy}>
+                                    <div className="relative h-5">
+                                        {isEditMode && (
+                                            <div onClick={() => handleAddModule(0)} className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                                                <div className="flex-1 h-0.5 bg-white rounded-full" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    {modules.map((module, index) => (
+                                        <React.Fragment key={module.id}>
+                                            <SortableModule
+                                                isEditMode={isEditMode}
+                                                module={module}
+                                                accountName={account.name}
+                                                courseId={numericCourseId}
+                                                onDelete={() => handleRemoveModule(module.id, module.name)}
+                                                onUpdate={async name => { await updateModule({ id: module.id, name }); await refetchModules(); }}
+                                                setConfirmConfig={setConfirmConfig}
+                                            />
+                                            <div className="relative h-5">
+                                                {isEditMode && (
+                                                    <div onClick={() => handleAddModule(index + 1)} className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                                                        <div className="flex-1 h-0.5 bg-white rounded-full" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </React.Fragment>
+                                    ))}
+                                </SortableContext>
+                            </DndContext>
                         )}
                     </div>
-                    {!isCheckingRole && (userRole === 'admin' || userRole === 'owner') && (
-                        <div className="flex items-center gap-2">
-                            <button onClick={() => setIsEditMode(prev => !prev)} className={`${isEditMode ? 'bg-white text-gray-900 hover:bg-gray-300' : 'text-white hover:text-cgray-50'} p-2 rounded-full transition-colors cursor-pointer`}>
-                                {isEditMode ? <Check size={25} /> : <Pencil size={25} />}
-                            </button>
-                            <button onClick={handleRemoveCourse} className="text-red-500 hover:text-red-400 p-2 rounded-full cursor-pointer">
-                                <Trash size={25} />
-                            </button>
-                            <button onClick={() => setShowMembersPanel(prev => !prev)} className="cursor-pointer p-2 rounded-full border-2 border-white hover:border-cgray-50 text-white hover:text-cgray-50 transition-colors duration-100">
-                                <Users size={25} />
-                            </button>
-                        </div>
-                    )}
-                </div>
+                </motion.div>
 
-                {/* Modules list */}
-                {modulesError && <div className="text-red-400 p-8">{modulesError}</div>}
-                <div className="space-y-0">
-                    {isLoadingModules ? (
-                        Array.from({ length: 3 }).map((_, idx) => <Skeleton key={idx} className="h-20 w-full rounded-lg" />)
-                    ) : (
-                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragModule}>
-                            <SortableContext items={modules} strategy={verticalListSortingStrategy}>
-                                <div className="relative h-5">
-                                    {isEditMode && (
-                                        <div onClick={() => handleAddModule(0)} className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
-                                            <div className="flex-1 h-0.5 bg-white rounded-full" />
-                                        </div>
-                                    )}
-                                </div>
-                                {modules.map((module, index) => (
-                                    <React.Fragment key={module.id}>
-                                        <SortableModule
-                                            isEditMode={isEditMode}
-                                            module={module}
-                                            accountName={account.name}
-                                            courseId={numericCourseId}
-                                            onDelete={() => handleRemoveModule(module.id, module.name)}
-                                            onUpdate={async name => { await updateModule({ id: module.id, name }); await refetchModules(); }}
-                                            setConfirmConfig={setConfirmConfig}
-                                        />
-                                        <div className="relative h-5">
-                                            {isEditMode && (
-                                                <div onClick={() => handleAddModule(index + 1)} className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
-                                                    <div className="flex-1 h-0.5 bg-white rounded-full" />
-                                                </div>
-                                            )}
-                                        </div>
-                                    </React.Fragment>
-                                ))}
-                            </SortableContext>
-                        </DndContext>
-                    )}
-                </div>
-            </motion.div>
-
-            {/* Members Panel with animated width */}
-            <motion.aside
-                className={`bg-cgray-900 ${showMembersPanel ? "pl-4 m-4" : ""} overflow-auto border-l border-cgray-700`}
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: showMembersPanel ? '40%' : 0, opacity: showMembersPanel ? 1 : 0 }}
-                transition={{ duration: 0.15 }}
-                style={{ overflow: 'hidden' }}
-            >
-                {showMembersPanel && (
-                    <>
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-semibold text-gray-100 text-nowrap">
-                                Проходят курс
-                            </h3>
-                            <button
-                                onClick={() => { setIsUsersListOpen(true) }}
-                                className="px-1 py-1 text-white hover:text-cgray-100 rounded-full transition-colors cursor-pointer"
-                            >
-                                <UserRoundPlus />
-                            </button>
-                        </div>
-                        <ul className="space-y-2">
-                            {participants.map(member => (
-                                <div
-                                    key={member.user.id}
-                                    className="flex justify-between items-center p-2 bg-cgray-700 rounded-lg transition-colors hover:bg-cgray-600"
+                {/* Members Panel with animated width */}
+                <motion.aside
+                    className={`fixed top-[76px] pl-4 right-0 h-[calc(100vh-76px)] w-[30%] bg-cgray-900 overflow-y-auto border-l border-cgray-700 transition-all duration-300 z-30 ${scrolled ? "" : "pt-18"} ${showMembersPanel ? "pr-25" : ""}`}
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: showMembersPanel ? '30%' : 0, opacity: showMembersPanel ? 1 : 0 }}
+                    transition={{ duration: 0 }}
+                    style={{ overflow: 'hidden' }}
+                >
+                    {showMembersPanel && (
+                        <>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-semibold text-gray-100 text-nowrap">
+                                    Проходят курс
+                                </h3>
+                                <button
+                                    onClick={() => { setIsUsersListOpen(true) }}
+                                    className="px-1 py-1 text-white hover:text-cgray-100 rounded-full transition-colors cursor-pointer"
                                 >
-                                    <div className="flex gap-2 items-center">
-                                        <Avatar name={member.user.name} size="sm" />
-                                        <div className="text-cgray-100 flex flex-col">
-                                            <span className="font-small">{member.user.name}</span>
-                                            {/* <span className="text-cgray-400 text-sm">{member.user.email}</span> */}
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        onClick={() => handleUnenroll(member.user.id)}
-                                        className="text-red-500 hover:text-red-400 p-1 transition-colors cursor-pointer"
-                                        aria-label="Удалить участника"
+                                    <UserRoundPlus />
+                                </button>
+                            </div>
+                            <ul className="space-y-2">
+                                {participants.map(member => (
+                                    <div
+                                        key={member.user.id}
+                                        className="flex justify-between items-center p-2 bg-cgray-700 rounded-lg transition-colors hover:bg-cgray-600"
                                     >
-                                        <Trash size={18} />
-                                    </button>
-                                </div>
-                            ))}
-                        </ul>
-                    </>
-                )}
-            </motion.aside>
+                                        <div className="flex gap-2 items-center">
+                                            <Avatar name={member.user.name} size="sm" />
+                                            <div className="text-cgray-100 flex flex-col">
+                                                <span className="font-small">{member.user.name}</span>
+                                            </div>
+                                        </div>
 
+                                        <button
+                                            onClick={() => handleUnenroll(member.user.id)}
+                                            className="text-red-500 hover:text-red-400 p-1 transition-colors cursor-pointer"
+                                            aria-label="Удалить участника"
+                                        >
+                                            <Trash size={18} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </ul>
+                        </>
+                    )}
+                </motion.aside>
+            </div>
 
             {/* Modals */}
-
             <ConfirmModal
                 isOpen={confirmConfig.isOpen}
                 message={confirmConfig.message}

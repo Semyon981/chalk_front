@@ -22,6 +22,8 @@ import {
     Trash,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import ElapsedTimer from "./ui/ElapsedTimer";
+import { data } from "react-router-dom";
 
 export interface TestContentProps {
     testId: number;
@@ -36,7 +38,7 @@ const TestContent: React.FC<TestContentProps> = ({
     displayMode,
     testAttempts = [],
     isLoading = false,
-    setIsLoading = () => {},
+    setIsLoading = () => { },
 }) => {
     const [testQuestions, setTestQuestions] = useState<TestQuestion[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -49,6 +51,9 @@ const TestContent: React.FC<TestContentProps> = ({
     >({});
     const [attemptId, setAttemptId] = useState(0);
 
+    const [currentPassStartedAt, setCurrentPassStartedAt] = useState("");
+
+
     const currentQuestion = testQuestions[currentIndex];
     const currentAttempt = testAttempts[attemptId];
     const points = currentAttempt?.points ?? 0;
@@ -56,8 +61,8 @@ const TestContent: React.FC<TestContentProps> = ({
         points >= 0.8
             ? "bg-green-500"
             : points >= 0.5
-            ? "bg-yellow-500"
-            : "bg-red-500";
+                ? "bg-yellow-500"
+                : "bg-red-500";
 
     // Эффект 1: Загрузка данных для режима прохождения теста
     useEffect(() => {
@@ -67,9 +72,10 @@ const TestContent: React.FC<TestContentProps> = ({
                 .then(
                     ({
                         data: {
-                            attempt: { questions },
+                            attempt: { started_at, questions },
                         },
                     }) => {
+                        setCurrentPassStartedAt(started_at)
                         setTestQuestions(questions);
                         const initialSelections: Record<number, number[]> = {};
                         for (const question of questions) {
@@ -98,10 +104,7 @@ const TestContent: React.FC<TestContentProps> = ({
 
     // Эффект 3: Загрузка данных теста для других режимов
     useEffect(() => {
-        if (
-            displayMode !== "pass" &&
-            !(displayMode === "view" && testAttempts.length > 0)
-        ) {
+        if (displayMode === "edit") {
             setIsLoading(true);
             getTestInfo(testId)
                 .then((res) => setTestQuestions(res.data.test.questions))
@@ -155,7 +158,7 @@ const TestContent: React.FC<TestContentProps> = ({
             answers: [],
         };
         setTestQuestions((prev) => [...prev, newQuestion]);
-        setCurrentIndex((prev) => prev + 1);
+        setCurrentIndex(testQuestions.length);
     };
 
     const updateQuestion = async (text: string) => {
@@ -178,16 +181,16 @@ const TestContent: React.FC<TestContentProps> = ({
             prev.map((q) =>
                 q.id === currentQuestion.id
                     ? {
-                          ...q,
-                          answers: [
-                              ...q.answers,
-                              {
-                                  id: res.data.id,
-                                  answer: "",
-                                  is_correct: false,
-                              },
-                          ],
-                      }
+                        ...q,
+                        answers: [
+                            ...q.answers,
+                            {
+                                id: res.data.id,
+                                answer: "",
+                                is_correct: false,
+                            },
+                        ],
+                    }
                     : q
             )
         );
@@ -201,11 +204,11 @@ const TestContent: React.FC<TestContentProps> = ({
             prev.map((q) =>
                 q.id === currentQuestion.id
                     ? {
-                          ...q,
-                          answers: q.answers.map((a) =>
-                              a.id === id ? { ...a, ...changes } : a
-                          ),
-                      }
+                        ...q,
+                        answers: q.answers.map((a) =>
+                            a.id === id ? { ...a, ...changes } : a
+                        ),
+                    }
                     : q
             )
         );
@@ -264,6 +267,7 @@ const TestContent: React.FC<TestContentProps> = ({
         }
     };
 
+
     const isEdit = displayMode === "edit";
     const isPass = displayMode === "pass";
     const isView = displayMode === "view";
@@ -277,431 +281,406 @@ const TestContent: React.FC<TestContentProps> = ({
     }
 
     return (
-        <div className="border-cgray-600 pt-4 flex flex-col">
-            {!testQuestions.length ? (
-                isEdit ? (
-                    <button
-                        onClick={addQuestion}
-                        className="w-8 h-8 flex items-center justify-center text-white cursor-pointer hover:scale-125"
-                    >
-                        <Plus size={20} />
-                    </button>
-                ) : (
-                    <p>Здесь пока пусто</p>
-                )
-            ) : (
-                <div className="space-y-4 mb-4">
-                    {/* Блок попыток и прогресса */}
-                    {isView && (
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-4">
-                                {/* К началу */}
-                                <button
-                                    onClick={() => handleAttemptChange("first")}
-                                    disabled={attemptId === 0}
-                                    className={`transition-transform duration-150 ${
-                                        attemptId === 0
-                                            ? "opacity-50 cursor-default"
-                                            : "text-white hover:scale-125"
-                                    }`}
-                                >
-                                    <ChevronsLeft size={20} />
-                                </button>
+        <div className="border-cgray-600 pt-4 flex flex-col space-y-4 mb-4">
+            <>
+                {isView && !!testAttempts.length && (
 
-                                {/* Назад */}
-                                <button
-                                    onClick={() => handleAttemptChange("prev")}
-                                    disabled={attemptId === 0}
-                                    className={`transition-transform duration-150 ${
-                                        attemptId === 0
-                                            ? "opacity-50 cursor-default"
-                                            : "text-white hover:scale-125"
-                                    }`}
-                                >
-                                    <ChevronLeft size={20} />
-                                </button>
-
-                                {/* Индикатор */}
-                                <span className="font-medium">
-                                    Попытка {attemptId + 1} из{" "}
-                                    {testAttempts.length}
-                                </span>
-
-                                {/* Вперёд */}
-                                <button
-                                    onClick={() => handleAttemptChange("next")}
-                                    disabled={
-                                        attemptId === testAttempts.length - 1
-                                    }
-                                    className={`transition-transform duration-150 ${
-                                        attemptId === testAttempts.length - 1
-                                            ? "opacity-50 cursor-default"
-                                            : "text-white hover:scale-125"
-                                    }`}
-                                >
-                                    <ChevronRight size={20} />
-                                </button>
-
-                                {/* К концу */}
-                                <button
-                                    onClick={() => handleAttemptChange("last")}
-                                    disabled={
-                                        attemptId === testAttempts.length - 1
-                                    }
-                                    className={`transition-transform duration-150 ${
-                                        attemptId === testAttempts.length - 1
-                                            ? "opacity-50 cursor-default"
-                                            : "text-white hover:scale-125"
-                                    }`}
-                                >
-                                    <ChevronsRight size={20} />
-                                </button>
-                            </div>
-                            <div className="flex items-center gap-6">
-                                {/* Блок с датами */}
-                                <div className="flex items-center gap-6">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm text-gray-400">
-                                            Начало:
-                                        </span>
-                                        <span className="text-sm">
-                                            {formatRussianDateTime(
-                                                currentAttempt?.started_at
-                                            )}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm text-gray-400">
-                                            Завершение:
-                                        </span>
-                                        <span className="text-sm">
-                                            {formatRussianDateTime(
-                                                currentAttempt?.finished_at
-                                            )}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col items-start relative pr-4 pb-3">
-                                    <span className="text-sm mb-1 place-self-end">
-                                        Результат
-                                    </span>
-                                    <div className="w-40 bg-gray-700 rounded-full h-2.5">
-                                        <div
-                                            className={`h-2.5 rounded-full transition-all ${progressColor}`}
-                                            style={{
-                                                width: `${
-                                                    (points ?? 0) * 100
-                                                }%`,
-                                            }}
-                                        />
-                                    </div>
-                                    {/*
-                                    Вычисляем позицию индикатора результата для наглядности
-                                    */}
-                                    {(() => {
-                                        const percent = points * 100 || 12;
-                                        const offset = points * 10 + 20;
-                                        const leftStyle = `calc(${percent}% - ${offset}px)`;
-                                        return (
-                                            <span
-                                                className="text-xs mt-1 absolute top-8 transition-[left]"
-                                                style={{ left: leftStyle }}
-                                            >
-                                                {(points * 100).toFixed(1)}%
-                                            </span>
-                                        );
-                                    })()}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Навигация по вопросам */}
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="flex gap-2">
-                            {testQuestions.map((q, index) => {
-                                // Логика для режима view
-                                if (isView) {
-                                    const allAnswers = q.answers;
-                                    const correctAnswers = allAnswers.filter(
-                                        (a) => a.is_correct
-                                    );
-                                    const selectedCorrect = allAnswers.filter(
-                                        (a) => a.is_selected && a.is_correct
-                                    );
-                                    const selectedIncorrect = allAnswers.filter(
-                                        (a) => a.is_selected && !a.is_correct
-                                    );
-
-                                    let dotColor = "";
-                                    if (currentIndex === index) {
-                                        dotColor = "bg-blue-500 cursor-default"; // Текущий вопрос
-                                    } else if (
-                                        selectedIncorrect.length > 0 &&
-                                        selectedCorrect.length === 0
-                                    ) {
-                                        dotColor = "bg-red-500"; // Все ответы неправильные
-                                    } else if (
-                                        selectedCorrect.length ===
-                                            correctAnswers.length &&
-                                        selectedIncorrect.length === 0
-                                    ) {
-                                        dotColor = "bg-green-500"; // Все ответы правильные
-                                    } else if (
-                                        selectedCorrect.length > 0 ||
-                                        selectedIncorrect.length > 0
-                                    ) {
-                                        dotColor = "bg-yellow-500"; // Некоторые ответы правильные
-                                    } else {
-                                        dotColor = "bg-cgray-500"; // Ответы не выбраны
-                                    }
-
-                                    return (
-                                        <button
-                                            key={q.id}
-                                            onClick={() =>
-                                                setCurrentIndex(index)
-                                            }
-                                            className={`border border-transparent border-transparent cursor-pointer px-3 py-1 rounded-full text-sm font-medium hover:border-blue-500 transition-colors ${dotColor} text-white`}
-                                        />
-                                    );
-                                }
-
-                                // Логика для режима pass
-                                if (isPass) {
-                                    const hasSelected =
-                                        selectedAnswers[q.id]?.length > 0;
-
-                                    const dotColor =
-                                        currentIndex === index
-                                            ? "bg-blue-500"
-                                            : hasSelected
-                                            ? "bg-white"
-                                            : "bg-cgray-500";
-
-                                    return (
-                                        <button
-                                            key={q.id}
-                                            onClick={() =>
-                                                setCurrentIndex(index)
-                                            }
-                                            className={`border border-transparent px-3 py-1 rounded-full text-sm font-medium hover:border-blue-500 transition-colors ${dotColor} ${
-                                                dotColor === "bg-white"
-                                                    ? "text-gray-800"
-                                                    : "text-white"
-                                            }`}
-                                        />
-                                    );
-                                }
-
-                                // Логика для других режимов (edit)
-                                return (
-                                    <button
-                                        key={q.id}
-                                        onClick={() => setCurrentIndex(index)}
-                                        className={`border border-transparent px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                                            currentIndex === index
-                                                ? "bg-blue-500 text-white"
-                                                : "bg-cgray-500 text-gray-300 hover:bg-cgray-400 cursor-pointer hover:border-blue-500"
-                                        }`}
-                                    />
-                                );
-                            })}
-                        </div>
-                        {isEdit && (
+                    // Блок попыток и прогресса
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                            {/* К началу */}
                             <button
-                                onClick={addQuestion}
-                                className="w-8 h-8 flex items-center justify-center text-white cursor-pointer hover:scale-125"
+                                onClick={() => handleAttemptChange("first")}
+                                disabled={attemptId === 0}
+                                className={`transition-transform duration-150 ${attemptId === 0
+                                    ? "opacity-50 cursor-default"
+                                    : "text-white hover:scale-125"
+                                    }`}
                             >
-                                <Plus size={20} />
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Заголовок вопроса */}
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 mb-0 grow">
-                            {isEdit && (
-                                <button
-                                    onClick={() =>
-                                        removeQuestion(currentQuestion.id)
-                                    }
-                                    className="text-red-500 cursor-pointer hover:text-red-400 p-1 mb-4"
-                                >
-                                    <Trash size={20} />
-                                </button>
-                            )}
-
-                            <p className="text-gray-100 mb-4">
-                                {currentIndex + 1}.
-                            </p>
-
-                            {isEdit ? (
-                                <input
-                                    className="w-full bg-transparent border-b border-cgray-500 focus:outline-none text-gray-100 mb-4"
-                                    value={editingQuestion}
-                                    onChange={(e) =>
-                                        setEditingQuestion(e.target.value)
-                                    }
-                                    onBlur={() => {
-                                        if (
-                                            editingQuestion !==
-                                            currentQuestion.question
-                                        ) {
-                                            updateQuestion(editingQuestion);
-                                        }
-                                    }}
-                                />
-                            ) : (
-                                <p className="text-gray-100 text-lg mb-4">
-                                    {currentQuestion.question}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Стрелочки */}
-                        <div className="flex justify-end gap-4 mb-4">
-                            <button
-                                disabled={currentIndex === 0}
-                                onClick={() => setCurrentIndex((i) => i - 1)}
-                                className={`transition-transform duration-150 ${
-                                    currentIndex === 0
-                                        ? "opacity-50 cursor-default"
-                                        : "text-white hover:scale-125"
-                                }`}
-                            >
-                                <ChevronLeft size={24} />
+                                <ChevronsLeft size={20} />
                             </button>
 
+                            {/* Назад */}
                             <button
+                                onClick={() => handleAttemptChange("prev")}
+                                disabled={attemptId === 0}
+                                className={`transition-transform duration-150 ${attemptId === 0
+                                    ? "opacity-50 cursor-default"
+                                    : "text-white hover:scale-125"
+                                    }`}
+                            >
+                                <ChevronLeft size={20} />
+                            </button>
+
+                            {/* Индикатор */}
+                            <span className="font-medium">
+                                Попытка {attemptId + 1} из{" "}
+                                {testAttempts.length}
+                            </span>
+
+                            {/* Вперёд */}
+                            <button
+                                onClick={() => handleAttemptChange("next")}
                                 disabled={
-                                    currentIndex === testQuestions.length - 1
+                                    attemptId === testAttempts.length - 1
                                 }
-                                onClick={handleNextClick}
-                                className={`transition-transform duration-150 text-white ${
-                                    currentIndex === testQuestions.length - 1
-                                        ? "opacity-50 cursor-default"
-                                        : "hover:scale-125"
-                                }`}
+                                className={`transition-transform duration-150 ${attemptId === testAttempts.length - 1
+                                    ? "opacity-50 cursor-default"
+                                    : "text-white hover:scale-125"
+                                    }`}
                             >
-                                <ChevronRight size={24} />
+                                <ChevronRight size={20} />
+                            </button>
+
+                            {/* К концу */}
+                            <button
+                                onClick={() => handleAttemptChange("last")}
+                                disabled={
+                                    attemptId === testAttempts.length - 1
+                                }
+                                className={`transition-transform duration-150 ${attemptId === testAttempts.length - 1
+                                    ? "opacity-50 cursor-default"
+                                    : "text-white hover:scale-125"
+                                    }`}
+                            >
+                                <ChevronsRight size={20} />
                             </button>
                         </div>
+                        <div className="flex items-center gap-6">
+                            {/* Блок с датами */}
+                            <div className="flex items-center gap-6">
+                                <span className="text-sm text-cgray-50">
+                                    {formatRussianDateTime(currentAttempt?.started_at)} - {formatRussianDateTime(currentAttempt?.started_at)}
+                                </span>
+                            </div>
+                            <div className="flex flex-col items-center relative pr-4">
+                                <div className="w-40 bg-cgray-400 rounded-full h-2.5">
+                                    <div
+                                        className={`h-2.5 rounded-full transition-all ${progressColor}`}
+                                        style={{
+                                            width: `${(points ?? 0) * 100}%`,
+                                        }}
+                                    />
+                                </div>
+                                {/*
+                                            Вычисляем позицию индикатора результата для наглядности
+                                            */}
+                                {(() => {
+                                    const percent = points * 100 || 12;
+                                    const offset = points * 10 + 20;
+                                    const leftStyle = `calc(${percent}% - ${offset}px)`;
+                                    return (
+                                        <span
+                                            className="text-xs mt-1 absolute top-2 transition-[left]"
+                                            style={{ left: leftStyle }}
+                                        >
+                                            {(points * 100).toFixed(1)}%
+                                        </span>
+                                    );
+                                })()}
+                            </div>
+                        </div>
                     </div>
+                )}
+                {!testQuestions.length ? (
+                    isEdit ? (
+                        <button
+                            onClick={addQuestion}
+                            className="w-8 h-8 flex items-center justify-center text-white cursor-pointer hover:scale-125"
+                        >
+                            <Plus size={20} />
+                        </button>
+                    ) : (
+                        <p>Здесь пока пусто</p>
+                    )) : !(isView && !testAttempts.length) && (
+                        <>
+                            {/* Навигация по вопросам */}
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="flex gap-2">
+                                    {testQuestions.map((q, index) => {
+                                        // Логика для режима view
+                                        if (isView) {
+                                            const allAnswers = q.answers;
+                                            const correctAnswers = allAnswers.filter(
+                                                (a) => a.is_correct
+                                            );
+                                            const selectedCorrect = allAnswers.filter(
+                                                (a) => a.is_selected && a.is_correct
+                                            );
+                                            const selectedIncorrect = allAnswers.filter(
+                                                (a) => a.is_selected && !a.is_correct
+                                            );
 
-                    {/* Ответы */}
-                    <div className="space-y-2">
-                        {currentQuestion.answers.map((a) => (
-                            <div key={a.id} className="flex items-center gap-2">
-                                {isEdit ? (
-                                    <>
+                                            let dotColor = "";
+                                            if (currentIndex === index) {
+                                                dotColor = "bg-blue-500"; // Текущий вопрос
+                                            } else if (
+                                                selectedIncorrect.length > 0 &&
+                                                selectedCorrect.length === 0
+                                            ) {
+                                                dotColor = "bg-red-500"; // Все ответы неправильные
+                                            } else if (
+                                                selectedCorrect.length ===
+                                                correctAnswers.length &&
+                                                selectedIncorrect.length === 0
+                                            ) {
+                                                dotColor = "bg-green-500"; // Все ответы правильные
+                                            } else if (
+                                                selectedCorrect.length > 0 ||
+                                                selectedIncorrect.length > 0
+                                            ) {
+                                                dotColor = "bg-yellow-500"; // Некоторые ответы правильные
+                                            } else {
+                                                dotColor = "bg-cgray-500"; // Ответы не выбраны
+                                            }
+
+                                            return (
+                                                <button
+                                                    key={q.id}
+                                                    onClick={() =>
+                                                        setCurrentIndex(index)
+                                                    }
+                                                    className={`border border-transparent ${currentIndex === index ? "cursor-default" : "cursor-pointer"} px-5 py-[5px] rounded-full text-sm font-medium hover:border-blue-500 transition-colors ${dotColor} text-white`}
+                                                />
+                                            );
+                                        }
+
+                                        // Логика для режима pass
+                                        if (isPass) {
+                                            const hasSelected =
+                                                selectedAnswers[q.id]?.length > 0;
+
+                                            const dotColor =
+                                                currentIndex === index
+                                                    ? "bg-blue-500"
+                                                    : hasSelected
+                                                        ? "bg-white"
+                                                        : "bg-cgray-500";
+
+                                            return (
+                                                <button
+                                                    key={q.id}
+                                                    onClick={() =>
+                                                        setCurrentIndex(index)
+                                                    }
+                                                    className={`border border-transparent px-5 py-[5px] ${currentIndex === index ? "cursor-default" : "cursor-pointer"} rounded-full text-sm font-medium hover:border-blue-500 transition-colors ${dotColor} ${dotColor === "bg-white"
+                                                        ? "text-gray-800"
+                                                        : "text-white"
+                                                        }`}
+                                                />
+                                            );
+                                        }
+
+                                        // Логика для других режимов (edit)
+                                        return (
+                                            <button
+                                                key={q.id}
+                                                onClick={() => setCurrentIndex(index)}
+                                                className={`border border-transparent px-5 py-[5px] rounded-full text-sm font-medium transition-colors ${currentIndex === index
+                                                    ? "bg-blue-500 text-white"
+                                                    : "bg-cgray-500 text-gray-300 hover:bg-cgray-400 cursor-pointer hover:border-blue-500"
+                                                    }`}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                                {isEdit && (
+                                    <button
+                                        onClick={addQuestion}
+                                        className="w-8 h-8 flex items-center justify-center text-white cursor-pointer hover:scale-125"
+                                    >
+                                        <Plus size={20} />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Заголовок вопроса */}
+                            <div className="flex items-center justify-between">
+
+                                <div className="flex items-center gap-2 mb-0 grow">
+                                    {isEdit && (
                                         <button
                                             onClick={() =>
-                                                updateAnswer(a.id, {
-                                                    is_correct: !a.is_correct,
-                                                })
+                                                removeQuestion(currentQuestion.id)
                                             }
-                                            className={`w-6 h-6 flex items-center justify-center border transition duration-150 ${
-                                                a.is_correct
-                                                    ? "bg-green-500 border-green-500"
-                                                    : "bg-cgray-500 border-cgray-400"
-                                            }`}
-                                        >
-                                            {a.is_correct && (
-                                                <Check
-                                                    className="text-white"
-                                                    size={16}
-                                                />
-                                            )}
-                                        </button>
-
-                                        <input
-                                            className="flex-1 bg-cgray-800 p-2 rounded text-gray-100"
-                                            value={
-                                                editingAnswers[a.id] ?? a.answer
-                                            }
-                                            onChange={(e) =>
-                                                setEditingAnswers((prev) => ({
-                                                    ...prev,
-                                                    [a.id]: e.target.value,
-                                                }))
-                                            }
-                                            onBlur={() => {
-                                                const edited = (
-                                                    editingAnswers[a.id] ?? ""
-                                                ).trim();
-                                                const original = (
-                                                    a.answer ?? ""
-                                                ).trim();
-                                                if (edited !== original) {
-                                                    updateAnswer(a.id, {
-                                                        answer: edited,
-                                                    });
-                                                }
-                                            }}
-                                        />
-
-                                        <button
-                                            onClick={() => removeAnswer(a.id)}
                                             className="text-red-500 cursor-pointer hover:text-red-400 p-1"
                                         >
                                             <Trash size={20} />
                                         </button>
-                                    </>
-                                ) : isPass ? (
+                                    )}
+
+                                    <p className="text-gray-100 text-2xl">
+                                        {currentIndex + 1}.
+                                    </p>
+
+                                    {isEdit ? (
+                                        <input
+                                            className="w-full text-2xl bg-transparent border-cgray-500 focus:outline-none text-gray-100"
+                                            value={editingQuestion}
+                                            onChange={(e) =>
+                                                setEditingQuestion(e.target.value)
+                                            }
+                                            onBlur={() => {
+                                                if (
+                                                    editingQuestion !==
+                                                    currentQuestion.question
+                                                ) {
+                                                    updateQuestion(editingQuestion);
+                                                }
+                                            }}
+                                        />
+                                    ) : (
+                                        <p className="text-gray-100 text-2xl">
+                                            {currentQuestion.question}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {isPass && (
+                                    <div className="flex items-center mr-2">
+                                        <ElapsedTimer utcTime={currentPassStartedAt} />
+                                    </div>
+                                )}
+
+
+                                {/* Стрелочки */}
+                                <div className="flex justify-end gap-4">
                                     <button
-                                        onClick={() =>
-                                            handleAnswerSelect(
-                                                currentQuestion.id,
-                                                a.id
-                                            )
-                                        }
-                                        className={`w-full text-left p-2 rounded border transition ${
-                                            selectedAnswers[
-                                                currentQuestion.id
-                                            ]?.includes(a.id)
-                                                ? "bg-blue-500 text-white border-blue-500"
-                                                : "bg-cgray-700 text-gray-200 border-cgray-500"
-                                        }`}
+                                        disabled={currentIndex === 0}
+                                        onClick={() => setCurrentIndex((i) => i - 1)}
+                                        className={`transition-transform duration-150 ${currentIndex === 0
+                                            ? "opacity-50 cursor-default"
+                                            : "text-white hover:scale-125"
+                                            }`}
                                     >
-                                        {a.answer}
+                                        <ChevronLeft size={24} />
                                     </button>
-                                ) : (
-                                    <div
-                                        className={`w-full p-2 rounded border ${
-                                            a.is_selected
-                                                ? "border-blue-500"
-                                                : "border-cgray-500"
-                                        } ${
-                                            a.is_correct
-                                                ? "bg-green-500/20"
-                                                : a.is_selected
-                                                ? "bg-red-500/20"
-                                                : ""
-                                        }`}
+
+                                    <button
+                                        disabled={
+                                            currentIndex === testQuestions.length - 1
+                                        }
+                                        onClick={handleNextClick}
+                                        className={`transition-transform duration-150 text-white ${currentIndex === testQuestions.length - 1
+                                            ? "opacity-50 cursor-default"
+                                            : "hover:scale-125"
+                                            }`}
                                     >
-                                        {a.answer}
+                                        <ChevronRight size={24} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Ответы */}
+                            <div className="space-y-2">
+                                {currentQuestion.answers.map((a) => (
+                                    <div key={a.id} className="flex items-center gap-2">
+                                        {isEdit ? (
+                                            <>
+                                                <button
+                                                    onClick={() =>
+                                                        updateAnswer(a.id, {
+                                                            is_correct: !a.is_correct,
+                                                        })
+                                                    }
+                                                    className={`w-6 h-6 flex items-center cursor-pointer justify-center border rounded-sm transition duration-150 ${a.is_correct
+                                                        ? "bg-green-500 border-green-500"
+                                                        : "bg-cgray-500 border-cgray-400"
+                                                        }`}
+                                                >
+                                                    {a.is_correct && (
+                                                        <Check
+                                                            className="text-white"
+                                                            size={16}
+                                                        />
+                                                    )}
+                                                </button>
+
+                                                <input
+                                                    className="flex-1 bg-cgray-800 p-2 rounded outline-0 text-gray-100"
+                                                    value={
+                                                        editingAnswers[a.id] ?? a.answer
+                                                    }
+                                                    onChange={(e) =>
+                                                        setEditingAnswers((prev) => ({
+                                                            ...prev,
+                                                            [a.id]: e.target.value,
+                                                        }))
+                                                    }
+                                                    onBlur={() => {
+                                                        const edited = (
+                                                            editingAnswers[a.id] ?? ""
+                                                        ).trim();
+                                                        const original = (
+                                                            a.answer ?? ""
+                                                        ).trim();
+                                                        if (edited !== original) {
+                                                            updateAnswer(a.id, {
+                                                                answer: edited,
+                                                            });
+                                                        }
+                                                    }}
+                                                />
+
+                                                <button
+                                                    onClick={() => removeAnswer(a.id)}
+                                                    className="text-red-500 cursor-pointer hover:text-red-400 p-1"
+                                                >
+                                                    <Trash size={20} />
+                                                </button>
+                                            </>
+                                        ) : isPass ? (
+                                            <button
+                                                onClick={() =>
+                                                    handleAnswerSelect(
+                                                        currentQuestion.id,
+                                                        a.id
+                                                    )
+                                                }
+                                                className={`w-full text-left p-2 rounded border cursor-pointer transition ${selectedAnswers[
+                                                    currentQuestion.id
+                                                ]?.includes(a.id)
+                                                    ? "bg-blue-500 text-white border-blue-500"
+                                                    : "bg-cgray-700 text-gray-200 border-cgray-500"
+                                                    }`}
+                                            >
+                                                {a.answer}
+                                            </button>
+                                        ) : (
+                                            <div
+                                                className={`w-full p-2 rounded border ${a.is_selected
+                                                    ? "border-blue-500"
+                                                    : "border-cgray-500"
+                                                    } ${a.is_correct
+                                                        ? "bg-green-500/20"
+                                                        : a.is_selected
+                                                            ? "bg-red-500/20"
+                                                            : ""
+                                                    }`}
+                                            >
+                                                {a.answer}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+
+                                {isEdit && (
+                                    <div className="relative h-5">
+                                        <div
+                                            className="absolute inset-0 flex items-center justify-center opacity-100 animate-pulse cursor-pointer"
+                                            onClick={addAnswer}
+                                        >
+                                            <div className="flex-1 h-0.5 bg-white rounded-full" />
+                                        </div>
                                     </div>
                                 )}
                             </div>
-                        ))}
-
-                        {isEdit && (
-                            <div className="relative h-5">
-                                <div
-                                    className="absolute inset-0 flex items-center justify-center opacity-100 animate-pulse cursor-pointer"
-                                    onClick={addAnswer}
-                                >
-                                    <div className="flex-1 h-0.5 bg-white rounded-full" />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
+                        </>
+                    )
+                }
+            </>
         </div>
-    );
+    )
 };
 
 export default TestContent;
