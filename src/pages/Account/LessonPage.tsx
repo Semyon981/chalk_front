@@ -1,14 +1,33 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Link, useOutletContext } from 'react-router-dom';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { useLesson } from '@/hooks/useLesson';
-import { useBlocks } from '@/hooks/useBlocks';
-import { type Account, type BlockType, type TestQuestion, type TestQuestionAnswer, type UpdateBlockRequest } from '@/api/types';
-import { Button } from '@/components/ui/Button';
-import { type Block, type AccountMember } from '@/api/types';
-import { ChevronLeft, GripVertical, X, Edit, Check, Upload, Video, Text, Trash, SquareGanttChartIcon, Pencil, Plus, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Link, useOutletContext } from "react-router-dom";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { useLesson } from "@/hooks/useLesson";
+import { useBlocks } from "@/hooks/useBlocks";
+import type {
+    Account,
+    BlockType,
+    UpdateBlockRequest,
+    Block,
+    AccountMember,
+    Attempt,
+} from "@/api/types";
+import { Button } from "@/components/ui/Button";
+import {
+    ChevronLeft,
+    GripVertical,
+    X,
+    Edit,
+    Check,
+    Upload,
+    Video,
+    Text,
+    Trash,
+    SquareGanttChartIcon,
+    Pencil,
+    Loader2,
+} from "lucide-react";
 import {
     DndContext,
     closestCenter,
@@ -17,39 +36,47 @@ import {
     useSensor,
     useSensors,
     type DragEndEvent,
-} from '@dnd-kit/core';
-import { arrayMove } from '@dnd-kit/sortable';
+} from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
 import {
     SortableContext,
     useSortable,
     verticalListSortingStrategy,
     sortableKeyboardCoordinates,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
     createBlock,
     updateBlock,
     removeBlock,
     setBlockPosition,
-} from '@/api/blocks';
-import { getFileUrl, uploadFile } from '@/api/files';
-import React from 'react';
-import TiptapEditor from '@/components/TiptapEditor';
-import axios from 'axios';
-import { useAuth } from '@/context/AuthContext';
-import { getUserRoleInAccount } from '@/lib/utils';
-import { createTestAnswer, createTestQuestion, getTestInfo, removeTestAnswer, removeTestQuestion, updateTestAnswer, updateTestQuestion } from '@/api/tests';
+} from "@/api/blocks";
+import { getFileUrl, uploadFile } from "@/api/files";
+import React from "react";
+import TiptapEditor from "@/components/TiptapEditor";
+import axios from "axios";
+import { useAuth } from "@/context/AuthContext";
+import { getUserRoleInAccount } from "@/lib/utils";
+import TestContent, { type TestContentProps } from "@/components/TestContent";
+import {
+    finishAttempt,
+    getCurrentAttempt,
+    getFinishedAttempts,
+    startAttempt,
+} from "@/api/tests";
 
 export default function LessonPage() {
     const { lessonId } = useParams<{ lessonId: string }>();
-    const { account, members, refetchMembers } = useOutletContext<{ account: Account, members: AccountMember[], refetchMembers: () => void }>();
+    const { account, members } = useOutletContext<{
+        account: Account;
+        members: AccountMember[];
+    }>();
     const { user } = useAuth();
     const [userRole, setUserRole] = useState<string | null>(null);
     const [isCheckingRole, setIsCheckingRole] = useState(true);
 
-    const numericLessonId = parseInt(lessonId || '0', 10);
+    const numericLessonId = parseInt(lessonId || "0", 10);
     const navigate = useNavigate();
-
 
     useEffect(() => {
         if (user && account && members) {
@@ -119,13 +146,13 @@ export default function LessonPage() {
             await createBlock({
                 lesson_id: numericLessonId,
                 type,
-                content: type === 'text' ? '' : '',
-                name: type === 'test' ? 'Новый тест' : undefined,
+                content: type === "text" ? "" : "",
+                name: type === "test" ? "Новый тест" : undefined,
                 order_idx: position,
             });
             await refetchBlocks();
         } catch (error) {
-            console.error('Failed to create block:', error);
+            console.error("Failed to create block:", error);
         }
     };
 
@@ -153,7 +180,7 @@ export default function LessonPage() {
     }
 
     const visibleBlocks = !isEditMode
-        ? blocks.filter(b => !(b.type === 'video' && !b.file_id))
+        ? blocks.filter((b) => !(b.type === "video" && !b.file_id))
         : blocks;
 
     return (
@@ -179,24 +206,32 @@ export default function LessonPage() {
                         </motion.h1>
                     )}
                 </div>
-                {!isCheckingRole && (userRole == 'admin' || userRole === 'owner') &&
-                    <Button
-                        variant={isEditMode ? 'light' : 'ghost'}
-                        onClick={() => setIsEditMode((prev) => !prev)}
-                        className="flex items-center gap-2 h-10 px-4 min-w-[120px]"
-                    >
-                        {isEditMode ? <Check /> : <Edit />}
-                        <span>{isEditMode ? 'Сохранить' : 'Редактировать'}</span>
-                    </Button>
-                }
+                {!isCheckingRole &&
+                    (userRole == "admin" || userRole === "owner") && (
+                        <Button
+                            variant={isEditMode ? "light" : "ghost"}
+                            onClick={() => setIsEditMode((prev) => !prev)}
+                            className="flex items-center gap-2 h-10 px-4 min-w-[120px]"
+                        >
+                            {isEditMode ? <Check /> : <Edit />}
+                            <span>
+                                {isEditMode ? "Сохранить" : "Редактировать"}
+                            </span>
+                        </Button>
+                    )}
             </div>
 
-            {blocksError && <div className="text-red-400 p-8">{blocksError}</div>}
+            {blocksError && (
+                <div className="text-red-400 p-8">{blocksError}</div>
+            )}
 
             <div className="space-y-0">
                 {isLoadingBlocks ? (
                     Array.from({ length: 3 }).map((_, idx) => (
-                        <Skeleton key={idx} className="h-20 w-full rounded-lg" />
+                        <Skeleton
+                            key={idx}
+                            className="h-20 w-full rounded-lg"
+                        />
                     ))
                 ) : (
                     <DndContext
@@ -208,22 +243,21 @@ export default function LessonPage() {
                             items={blocks}
                             strategy={verticalListSortingStrategy}
                         >
-
                             <div className="relative h-5">
-                                {isEditMode &&
+                                {isEditMode && (
                                     <div
-                                        className={`absolute inset-0 flex items-center justify-center ${!isLoadingBlocks && blocks.length === 0
-                                            ? "opacity-100 animate-pulse"
-                                            : "opacity-0 hover:opacity-100 transition-opacity"
-                                            } cursor-pointer`}
+                                        className={`absolute inset-0 flex items-center justify-center ${
+                                            !isLoadingBlocks &&
+                                            blocks.length === 0
+                                                ? "opacity-100 animate-pulse"
+                                                : "opacity-0 hover:opacity-100 transition-opacity"
+                                        } cursor-pointer`}
                                         onClick={(e) => handleLineClick(e, 0)}
                                     >
                                         <div className="flex-1 h-0.5 bg-white rounded-full" />
                                     </div>
-                                }
+                                )}
                             </div>
-
-
 
                             {visibleBlocks.map((block, index) => (
                                 <React.Fragment key={block.id}>
@@ -234,24 +268,31 @@ export default function LessonPage() {
                                             await removeBlock({ id: block.id });
                                             await refetchBlocks();
                                         }}
-                                        onUpdate={async (payload: UpdateBlockRequest) => {
+                                        onUpdate={async (
+                                            payload: UpdateBlockRequest
+                                        ) => {
                                             await updateBlock(payload);
                                             await refetchBlocks();
                                         }}
-                                    // onFileUpload={async (file: File) => {
-                                    //     const resp = await uploadFile(file);
-                                    //     return resp.data.id;
-                                    // }}
+                                        // onFileUpload={async (file: File) => {
+                                        //     const resp = await uploadFile(file);
+                                        //     return resp.data.id;
+                                        // }}
                                     />
                                     <div className="relative h-5">
-                                        {isEditMode &&
+                                        {isEditMode && (
                                             <div
                                                 className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-                                                onClick={(e) => handleLineClick(e, index + 1)}
+                                                onClick={(e) =>
+                                                    handleLineClick(
+                                                        e,
+                                                        index + 1
+                                                    )
+                                                }
                                             >
                                                 <div className="flex-1 h-0.5 bg-white rounded-full" />
                                             </div>
-                                        }
+                                        )}
                                     </div>
                                 </React.Fragment>
                             ))}
@@ -289,13 +330,17 @@ function BlockTypePopup({
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
-            if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
+            if (
+                popupRef.current &&
+                !popupRef.current.contains(e.target as Node)
+            ) {
                 onClose();
             }
         };
 
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener("mousedown", handleClickOutside);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
     }, [onClose]);
 
     return (
@@ -310,7 +355,7 @@ function BlockTypePopup({
             animate={{ opacity: 1, scale: 1 }}
         >
             <button
-                onClick={() => onSelect('text')}
+                onClick={() => onSelect("text")}
                 className="p-2 hover:bg-cgray-600 rounded-lg flex items-center gap-2 w-20"
             >
                 <Text className="h-5 w-5 text-green-400" />
@@ -318,14 +363,14 @@ function BlockTypePopup({
             </button>
 
             <button
-                onClick={() => onSelect('video')}
+                onClick={() => onSelect("video")}
                 className="p-2 hover:bg-cgray-600 rounded-lg flex items-center gap-2 w-20"
             >
                 <Video className="h-5 w-5 text-blue-400" />
                 <span className="text-sm">Видео</span>
             </button>
             <button
-                onClick={() => onSelect('test')}
+                onClick={() => onSelect("test")}
                 className="p-2 hover:bg-cgray-600 rounded-lg flex items-center gap-2 w-20"
             >
                 <SquareGanttChartIcon className="h-5 w-5 text-orange-600" />
@@ -345,7 +390,7 @@ function SortableBlock({
     block: Block;
     onDelete: () => void;
     onUpdate: (payload: UpdateBlockRequest) => void;
-    isEditMode: boolean
+    isEditMode: boolean;
     // onFileUpload: (file: File) => Promise<number>;
 }) {
     const {
@@ -373,7 +418,7 @@ function SortableBlock({
                 dragListeners={listeners}
                 onDelete={onDelete}
                 onUpdate={onUpdate}
-            // onFileUpload={onFileUpload}
+                // onFileUpload={onFileUpload}
             />
         </div>
     );
@@ -393,12 +438,12 @@ function BlockSection({
     dragListeners: any;
     onDelete: () => void;
     onUpdate: (payload: UpdateBlockRequest) => void;
-    isEditMode: boolean
+    isEditMode: boolean;
     // onFileUpload: (file: File) => Promise<number>;
 }) {
     return (
         <div className="group relative">
-            {block.type === 'text' ? (
+            {block.type === "text" ? (
                 <TextBlock
                     block={block}
                     dragAttributes={dragAttributes}
@@ -407,7 +452,7 @@ function BlockSection({
                     onUpdate={onUpdate}
                     isEditMode={isEditMode}
                 />
-            ) : block.type === 'video' ? (
+            ) : block.type === "video" ? (
                 <VideoBlock
                     block={block}
                     dragAttributes={dragAttributes}
@@ -416,7 +461,7 @@ function BlockSection({
                     onUpdate={onUpdate}
                     isEditMode={isEditMode}
                 />
-            ) : block.type === 'test' ? (
+            ) : block.type === "test" ? (
                 <TestBlock
                     block={block}
                     dragAttributes={dragAttributes}
@@ -443,19 +488,19 @@ function TextBlock({
     dragListeners: any;
     onDelete: () => void;
     onUpdate: (payload: UpdateBlockRequest) => void;
-    isEditMode: boolean
+    isEditMode: boolean;
 }) {
-    const [isEditing, setIsEditing] = useState(false);
-    const [content, setContent] = useState(block.content || '');
+    const [isInnerEditing, setIsInnerEditing] = useState(false);
+    const [content, setContent] = useState(block.content || "");
 
     const handleUpdate = async () => {
-        setIsEditing(false);
+        setIsInnerEditing(false);
         await onUpdate({ id: block.id, content });
     };
 
     return (
         <>
-            {isEditMode &&
+            {isEditMode && (
                 <div>
                     <button
                         className="absolute -left-8 top-[1rem] flex opacity-0 group-hover:opacity-100 hover:bg-cgray-600 p-1 rounded z-10"
@@ -474,15 +519,14 @@ function TextBlock({
                         </button>
                     </div>
                 </div>
-            }
-
+            )}
 
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="bg-cgray-700 rounded-lg relative w-full"
             >
-                {isEditing ? (
+                {isInnerEditing ? (
                     <TiptapEditor
                         initialContent={content}
                         onUpdate={setContent}
@@ -491,7 +535,7 @@ function TextBlock({
                 ) : (
                     <div
                         className="text-gray-100 prose prose-invert max-w-none min-h-[4rem] p-2 cursor-text"
-                        onClick={() => isEditMode && setIsEditing(true)}
+                        onClick={() => isEditMode && setIsInnerEditing(true)}
                     >
                         <div dangerouslySetInnerHTML={{ __html: content }} />
                     </div>
@@ -526,8 +570,6 @@ function VideoBlock({
     const [previewReady, setPreviewReady] = useState(false);
     // const [videoReady, setVideoReady] = useState(false);
 
-
-
     const abortControllerRef = useRef<AbortController | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -543,7 +585,8 @@ function VideoBlock({
             const resp = await uploadFile(file, {
                 onUploadProgress: (progressEvent) => {
                     const percentCompleted = Math.round(
-                        (progressEvent.loaded * 100) / (progressEvent.total || 1)
+                        (progressEvent.loaded * 100) /
+                            (progressEvent.total || 1)
                     );
                     setUploadProgress(percentCompleted);
                 },
@@ -554,7 +597,7 @@ function VideoBlock({
             onUpdate({ id: block.id, file_id: resp.data.id });
         } catch (error) {
             if (!axios.isCancel(error)) {
-                console.error('File upload failed:', error);
+                console.error("File upload failed:", error);
             }
         } finally {
             setVideoPreviewUrl(null);
@@ -569,7 +612,7 @@ function VideoBlock({
         }
         setVideoPreviewUrl(null);
         if (fileInputRef.current) {
-            fileInputRef.current.value = '';
+            fileInputRef.current.value = "";
         }
     };
 
@@ -581,7 +624,7 @@ function VideoBlock({
         >
             <div className="flex justify-start">
                 <div className="relative w-auto h-auto">
-                    {isEditMode &&
+                    {isEditMode && (
                         <div>
                             <button
                                 className="absolute -left-8 top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 hover:bg-cgray-600 p-1 rounded z-10"
@@ -597,7 +640,7 @@ function VideoBlock({
                                 <Trash size={20} />
                             </button>
                         </div>
-                    }
+                    )}
                     {fileId ? (
                         <video
                             controls={isHovered}
@@ -609,7 +652,10 @@ function VideoBlock({
                     ) : (
                         <div className="relative w-auto h-auto">
                             {videoPreviewUrl && (
-                                <div className="relative w-auto h-auto" hidden={!previewReady}>
+                                <div
+                                    className="relative w-auto h-auto"
+                                    hidden={!previewReady}
+                                >
                                     <video
                                         className="block h-full w-auto max-h-100 object-contain rounded-lg"
                                         muted
@@ -617,7 +663,9 @@ function VideoBlock({
                                         loop
                                         controls={false}
                                         src={videoPreviewUrl}
-                                        onLoadedMetadata={() => { setPreviewReady(true) }}
+                                        onLoadedMetadata={() => {
+                                            setPreviewReady(true);
+                                        }}
                                     />
 
                                     <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-4 rounded-lg">
@@ -634,7 +682,8 @@ function VideoBlock({
                             {(videoPreviewUrl == null || !previewReady) && (
                                 <label
                                     htmlFor={`video-upload-${block.id}`}
-                                    className="flex items-center justify-center w-160 h-60 cursor-pointer border-2 border-dashed border-white/80 hover:border-white text-white/80 hover:text-white bg-transparent rounded-lg overflow-hidden">
+                                    className="flex items-center justify-center w-160 h-60 cursor-pointer border-2 border-dashed border-white/80 hover:border-white text-white/80 hover:text-white bg-transparent rounded-lg overflow-hidden"
+                                >
                                     <div className="flex flex-col items-center gap-2 z-10">
                                         <Upload className="h-8 w-8" />
                                         <span>Нажмите для загрузки видео</span>
@@ -642,7 +691,10 @@ function VideoBlock({
                                     <input
                                         type="file"
                                         accept="video/*"
-                                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+                                        onChange={(e) =>
+                                            e.target.files?.[0] &&
+                                            handleFileUpload(e.target.files[0])
+                                        }
                                         // disabled={isUploading}
                                         className="hidden"
                                         id={`video-upload-${block.id}`}
@@ -654,7 +706,7 @@ function VideoBlock({
                     )}
                 </div>
             </div>
-        </motion.div >
+        </motion.div>
     );
 }
 
@@ -706,10 +758,7 @@ const CircularProgress = ({
                 className="cursor-pointer"
             >
                 <div className="w-full h-full flex items-center justify-center rounded-full transition-colors">
-                    <X
-                        className="text-white w-9 h-9 p-1"
-                        strokeWidth={3}
-                    />
+                    <X className="text-white w-9 h-9 p-1" strokeWidth={3} />
                 </div>
             </foreignObject>
         </svg>
@@ -732,31 +781,49 @@ function TestBlock({
     isEditMode: boolean;
 }) {
     const [isBlockNameEditing, setIsBlockNameEditing] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
-    const [name, setName] = useState(block.name || '');
-    const [testQuestions, setTestQuestions] = useState<TestQuestion[]>([]);
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [editingQuestion, setEditingQuestion] = useState('');
-    const [editingAnswers, setEditingAnswers] = useState<Record<number, string>>({});
+    const [contentDisplayMode, setContentDisplayMode] =
+        useState<TestContentProps["displayMode"]>(null);
+    const [name, setName] = useState(block.name || "");
+    const [attempts, setAttempts] = useState<Attempt[]>([]);
+    const [attemptId, setAttemptId] = useState<number | null>(null);
+    const [isTestStarted, setIsTestStarted] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isContentLoading, setIsContentLoading] = useState(false);
 
-    const currentQuestion = testQuestions[currentIndex];
+    const isContentEdit = contentDisplayMode === "edit";
+    const isContentPass = contentDisplayMode === "pass";
 
     useEffect(() => {
-        if (isEditing) {
-            getTestInfo(block.id).then(res => setTestQuestions(res.data.test.questions));
+        let isMounted = true;
+
+        if (!isEditMode) {
+            setIsLoading(true);
+            getCurrentAttempt(block.id)
+                .then(({ data }) => {
+                    if (isMounted) {
+                        setAttemptId(data.attempt.id);
+                        setIsTestStarted(true);
+                    }
+                })
+                .catch((_) => {
+                    if (isMounted) {
+                        setAttemptId(null);
+                        setIsTestStarted(false);
+                    }
+                })
+                .finally(() => {
+                    if (isMounted) setIsLoading(false);
+                });
         }
-    }, [isEditing]);
+
+        return () => {
+            isMounted = false;
+        };
+    }, [block.id, isEditMode]);
 
     useEffect(() => {
-        if (!isEditMode) setIsEditing(false);
+        setContentDisplayMode(null);
     }, [isEditMode]);
-
-
-    useEffect(() => {
-        if (currentQuestion) {
-            setEditingQuestion(currentQuestion.question);
-        }
-    }, [currentQuestion]);
 
     const handleUpdateName = async () => {
         setIsBlockNameEditing(false);
@@ -765,75 +832,45 @@ function TestBlock({
         }
     };
 
-    const addQuestion = async () => {
-        const res = await createTestQuestion({ test_id: block.id, question: 'Новый вопрос' });
-        const newQuestion: TestQuestion = {
-            id: res.data.id,
-            question: 'Новый вопрос',
-            answers: [],
-        };
-        setTestQuestions(prev => [...prev, newQuestion]);
-        setCurrentIndex(testQuestions.length);
+    const handleStartTest = () => {
+        setIsContentLoading(true);
+        startAttempt({ test_id: block.id })
+            .then(({ data: { id } }) => {
+                setAttemptId(id);
+                setIsTestStarted(true);
+                setContentDisplayMode("pass");
+            })
+            .finally(() => setIsContentLoading(false));
     };
 
-    const updateQuestion = async (text: string) => {
-        if (!currentQuestion) return;
-        await updateTestQuestion({ id: currentQuestion.id, question: text });
-        setTestQuestions(prev =>
-            prev.map(q => q.id === currentQuestion.id ? { ...q, question: text } : q)
-        );
+    const handleFinishTest = async () => {
+        setIsContentLoading(true);
+        await finishAttempt({ id: attemptId! });
+        setIsContentLoading(false);
+        setIsTestStarted(false);
+        handleViewAttempts();
     };
 
-    const addAnswer = async () => {
-        const res = await createTestAnswer({
-            question_id: currentQuestion.id,
-            answer: '',
-            is_correct: false,
-        });
-        setTestQuestions(prev =>
-            prev.map(q =>
-                q.id === currentQuestion.id
-                    ? { ...q, answers: [...q.answers, { id: res.data.id, answer: '', is_correct: false }] }
-                    : q
-            )
-        );
-    };
-
-    const updateAnswer = async (id: number, changes: Partial<TestQuestionAnswer>) => {
-        await updateTestAnswer({ id, ...changes });
-        setTestQuestions(prev =>
-            prev.map(q =>
-                q.id === currentQuestion.id
-                    ? {
-                        ...q,
-                        answers: q.answers.map(a => a.id === id ? { ...a, ...changes } : a),
-                    }
-                    : q
-            )
-        );
-    };
-
-    const removeAnswer = async (id: number) => {
-        await removeTestAnswer(id);
-        setTestQuestions(prev =>
-            prev.map(q =>
-                q.id === currentQuestion.id
-                    ? { ...q, answers: q.answers.filter(a => a.id !== id) }
-                    : q
-            )
-        );
-    };
-
-    const removeQuestion = async (id: number) => {
-        await removeTestQuestion(id);
-        const filtered = testQuestions.filter(q => q.id !== id);
-        setTestQuestions(filtered);
-        setCurrentIndex(Math.max(0, currentIndex - 1));
+    const handleViewAttempts = async () => {
+        if (contentDisplayMode === "view") {
+            setContentDisplayMode(null);
+            return;
+        }
+        try {
+            setIsContentLoading(true);
+            setContentDisplayMode("view");
+            const { data } = await getFinishedAttempts(block.id);
+            setAttempts(data.attempts);
+            setIsContentLoading(false);
+        } catch (error) {
+            console.error("Failed to fetch attempts:", error);
+            setAttempts([]);
+        }
     };
 
     return (
-        <>
-            {isEditMode &&
+        <div className="group relative">
+            {isEditMode && (
                 <div>
                     <button
                         className="absolute -left-8 top-[1rem] flex opacity-0 group-hover:opacity-100 hover:bg-cgray-600 p-1 rounded z-10"
@@ -852,7 +889,7 @@ function TestBlock({
                         </button>
                     </div>
                 </div>
-            }
+            )}
 
             <motion.div
                 initial={{ opacity: 0 }}
@@ -866,133 +903,100 @@ function TestBlock({
                             <input
                                 className="bg-transparent border-b border-gray-500 text-gray-100 focus:outline-none"
                                 value={name}
-                                onChange={e => setName(e.target.value)}
+                                onChange={(e) => setName(e.target.value)}
                                 onBlur={handleUpdateName}
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter') handleUpdateName();
-                                    if (e.key === 'Escape') {
-                                        setName(block.name || '');
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") handleUpdateName();
+                                    if (e.key === "Escape") {
+                                        setName(block.name || "");
                                         setIsBlockNameEditing(false);
                                     }
                                 }}
                                 autoFocus
                             />
                         ) : (
-                            <span className="text-gray-100 text-lg" onClick={() => isEditMode && setIsBlockNameEditing(true)}>{block.name}</span>
+                            <button
+                                type="button"
+                                className="text-gray-100 text-lg bg-transparent border-none p-0 m-0 cursor-pointer focus:outline-none"
+                                style={{ textAlign: "left" }}
+                                onClick={() =>
+                                    isEditMode && setIsBlockNameEditing(true)
+                                }
+                                tabIndex={isEditMode ? 0 : -1}
+                                disabled={!isEditMode}
+                                aria-label="Редактировать название блока"
+                            >
+                                {block.name}
+                            </button>
                         )}
                     </div>
                     {isEditMode ? (
-                        <Button variant={isEditing ? 'light' : 'ghost'} className="flex items-center gap-1" onClick={() => setIsEditing(p => !p)}>
-                            {isEditing ? <><Check size={16} /> Сохранить</> : <><Pencil size={16} /> Редактировать</>}
+                        <Button
+                            variant={isContentEdit ? "light" : "ghost"}
+                            className="flex items-center gap-1"
+                            onClick={() =>
+                                setContentDisplayMode(
+                                    isContentEdit ? null : "edit"
+                                )
+                            }
+                        >
+                            {isContentEdit ? (
+                                <>
+                                    <Check size={16} /> Сохранить
+                                </>
+                            ) : (
+                                <>
+                                    <Pencil size={16} /> Редактировать
+                                </>
+                            )}
                         </Button>
                     ) : (
-                        <Button variant="light">Начать тест</Button>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="ghost"
+                                onClick={() => handleViewAttempts()}
+                            >
+                                Просмотр попыток
+                            </Button>
+                            {isLoading ? (
+                                <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
+                            ) : isTestStarted && !isContentPass ? (
+                                <Button
+                                    variant="light"
+                                    onClick={() =>
+                                        setContentDisplayMode("pass")
+                                    }
+                                >
+                                    Продолжить тест
+                                </Button>
+                            ) : !isContentPass ? (
+                                <Button
+                                    variant="light"
+                                    onClick={handleStartTest}
+                                >
+                                    Начать тест
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="light"
+                                    onClick={handleFinishTest}
+                                >
+                                    Завершить тест
+                                </Button>
+                            )}
+                        </div>
                     )}
                 </div>
-
-                {isEditing && (
-                    <div className="border-t border-cgray-600 pt-4 flex flex-col">
-                        {!!testQuestions.length && (
-                            <div className="space-y-4 mb-4">
-                                <div className="flex items-center justify-between mb-4">
-                                    <button
-                                        disabled={currentIndex === 0}
-                                        onClick={() => setCurrentIndex(i => i - 1)}
-                                        className={`transition-transform duration-150 hover:scale-125 ${currentIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'text-white'}`}
-                                    >
-                                        <ChevronLeft size={24} />
-                                    </button>
-
-                                    <span className="text-gray-300 font-semibold">Вопрос {currentIndex + 1}</span>
-
-                                    <button
-                                        disabled={currentIndex === testQuestions.length - 1}
-                                        onClick={() => setCurrentIndex(i => i + 1)}
-                                        className={`transition-transform duration-150 hover:scale-125 ${currentIndex === testQuestions.length - 1 ? 'opacity-50 cursor-not-allowed' : 'text-white'}`}
-                                    >
-                                        <ChevronRight size={24} />
-                                    </button>
-                                </div>
-
-
-                                <input
-                                    className="w-full bg-transparent border-b border-cgray-500 focus:outline-none text-gray-100 mb-7"
-                                    value={editingQuestion}
-                                    onChange={e => setEditingQuestion(e.target.value)}
-                                    onBlur={() => {
-                                        if (editingQuestion !== currentQuestion.question) {
-                                            updateQuestion(editingQuestion);
-                                        }
-                                    }}
-                                    onKeyDown={e => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            if (editingQuestion !== currentQuestion.question) {
-                                                updateQuestion(editingQuestion);
-                                            }
-                                        } else if (e.key === 'Escape') {
-                                            setEditingQuestion(currentQuestion.question);
-                                        }
-                                    }}
-                                    onFocus={() => setEditingQuestion(currentQuestion.question)}
-                                />
-
-                                <div className="space-y-2">
-                                    {currentQuestion.answers.map(a => (
-                                        <div key={a.id} className="flex items-center gap-2">
-                                            <input
-                                                className="flex-1 bg-cgray-800 p-2 rounded text-gray-100"
-                                                value={editingAnswers[a.id] ?? a.answer}
-                                                onChange={e =>
-                                                    setEditingAnswers(prev => ({ ...prev, [a.id]: e.target.value }))
-                                                }
-                                                onBlur={() => {
-                                                    if ((editingAnswers[a.id] ?? a.answer) !== a.answer) {
-                                                        updateAnswer(a.id, { answer: editingAnswers[a.id] ?? '' });
-                                                    }
-                                                }}
-                                                onKeyDown={e => {
-                                                    if (e.key === 'Enter') {
-                                                        e.preventDefault();
-                                                        if ((editingAnswers[a.id] ?? a.answer) !== a.answer) {
-                                                            updateAnswer(a.id, { answer: editingAnswers[a.id] ?? '' });
-                                                        }
-                                                    } else if (e.key === 'Escape') {
-                                                        setEditingAnswers(prev => ({ ...prev, [a.id]: a.answer }));
-                                                    }
-                                                }}
-                                                onFocus={() =>
-                                                    setEditingAnswers(prev => ({ ...prev, [a.id]: a.answer }))
-                                                }
-                                            />
-
-                                            <button
-                                                onClick={() => {
-                                                    updateAnswer(a.id, { is_correct: !a.is_correct });
-                                                }}
-                                                className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all ${a.is_correct ? 'bg-green-500 border-green-500' : 'bg-cgray-500 border-cgray-400'
-                                                    }`}
-                                            >
-                                                {a.is_correct && <Check className="text-white" size={20} />}
-                                            </button>
-
-                                            <Button variant="ghost" onClick={() => removeAnswer(a.id)}>
-                                                <Trash size={16} />
-                                            </Button>
-                                        </div>
-                                    ))}
-
-                                    <Button size="sm" onClick={addAnswer} className="flex items-center gap-1 mt-3"><Plus className="mr-1" size={16} /> Добавить ответ</Button>
-                                </div>
-                                <Button variant="ghost" className="mt-10 flex items-center gap-4 w-full" onClick={() => removeQuestion(currentQuestion.id)}>
-                                    <Trash color='#ff6467' /> Удалить вопрос
-                                </Button>
-                            </div>
-                        )}
-                        <Button onClick={addQuestion} className="flex items-center gap-1"><Plus className="mr-2" /> Добавить вопрос</Button>
-                    </div>
+                {contentDisplayMode && (
+                    <TestContent
+                        displayMode={contentDisplayMode}
+                        testId={block.id}
+                        testAttempts={attempts}
+                        isLoading={isContentLoading}
+                        setIsLoading={setIsContentLoading}
+                    />
                 )}
             </motion.div>
-        </>
+        </div>
     );
 }

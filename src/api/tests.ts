@@ -1,8 +1,5 @@
 import api from './api';
 import type {
-  Test,
-  TestQuestion,
-  TestQuestionAnswer,
   GetTestByIDResponse,
   CreateQuestionRequest,
   UpdateQuestionRequest,
