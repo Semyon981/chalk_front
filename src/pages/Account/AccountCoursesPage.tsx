@@ -37,7 +37,7 @@ export function AccountCoursesPage() {
 
     return (
         <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 px-25">
                 {isLoading ? (
                     <Skeleton count={3} className="h-32 rounded-xl" />
                 ) : (

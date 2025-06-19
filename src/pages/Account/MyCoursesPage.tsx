@@ -13,7 +13,7 @@ export function MyCoursesPage() {
     if (error) return <div className="text-red-400">{error}</div>;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 px-25">
             {isLoading ? (
                 <Skeleton count={3} className="h-32 rounded-xl" />
             ) : myCourses.length > 0 ? (
@@ -24,7 +24,6 @@ export function MyCoursesPage() {
                         className="p-4 h-30 bg-cgray-600/50 rounded-lg hover:bg-cgray-500/70 transition-colors"
                     >
                         <h3 className="text-lg font-medium text-gray-100 overflow-hidden text-ellipsis">{course.name}</h3>
-                        {/* <p className="text-sm text-gray-400 mt-2">{course.description}</p> */}
                     </Link>
                 ))
 

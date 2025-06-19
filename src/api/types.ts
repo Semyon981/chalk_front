@@ -80,6 +80,8 @@ export interface UpdateBlockRequest { id: number; content?: string; file_id?: nu
 export interface UpdateBlockOrderRequest { id: number; order_idx: number; }
 export interface RemoveBlockRequest { id: number; }
 
+export interface GetBlockByIDResponse {block: Block}
+
 // File
 export interface UploadFileResponse { id: number; uploader_user_id: number; name: string; content_type: string; size: number; uploaded_at: string; }
 

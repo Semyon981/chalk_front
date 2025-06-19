@@ -27,7 +27,7 @@ export default function TestPassersPage() {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-8 px-25">
             <h2 className="text-2xl font-semibold text-gray-100 mb-4">Прошедшие тест пользователи</h2>
             <div className="overflow-x-auto">
                 <table className="min-w-full bg-cgray-800 rounded-lg overflow-hidden">

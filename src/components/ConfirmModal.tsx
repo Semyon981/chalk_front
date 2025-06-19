@@ -1,4 +1,6 @@
 import { Button } from '@/components/ui/Button';
+import { ChevronLeft, GripVertical, X, Edit, Check, Trash, Pencil, ArrowLeft, Users, UserRoundPlus } from 'lucide-react';
+
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -26,11 +28,14 @@ export function ConfirmModal({
       <div className="bg-cgray-800 rounded-lg p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">{title}</h2>
+
+
           <button
             onClick={onCancel}
-            className="text-cgray-100 text-2xl hover:text-cgray-200"
+            className="text-cgray-100 text-4xl hover:text-cgray-200 cursor-pointer"
+            aria-label="Закрыть"
           >
-            ×
+            <X size={25} />
           </button>
         </div>
 

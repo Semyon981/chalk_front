@@ -81,17 +81,16 @@ export function CourseParticipantsModal({ isOpen, courseId, members, onClose }: 
             </div>
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
                 {enrolled.map(u => {
-                    const member = members.find(m => m.user.id === u.user.id)!;
                     return (
                         <div
                             key={u.user.id}
                             className="flex justify-between items-center p-3 bg-cgray-700 rounded-lg transition-colors hover:bg-cgray-600"
                         >
                             <div className='flex gap-3 items-center'>
-                                <Avatar name={member.user.name} size="sm" />
+                                <Avatar name={u.user.name} size="sm" />
                                 <div className="text-cgray-100 flex flex-col">
-                                    <span className="font-medium">{member.user.name}</span>
-                                    <span className="text-cgray-400 text-sm">{member.user.email}</span>
+                                    <span className="font-medium">{u.user.name}</span>
+                                    <span className="text-cgray-400 text-sm">{u.user.email}</span>
                                 </div>
                             </div>
                             <button

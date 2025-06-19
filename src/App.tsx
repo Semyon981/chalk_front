@@ -16,6 +16,7 @@ import CoursePage from './pages/Account/CoursePage';
 import LessonPage from './pages/Account/LessonPage';
 import AcceptInvitePage from './pages/AcceptInvitePage';
 import TestPassersPage from './pages/Account/TestPassersPage';
+import { MemberPage } from './pages/Account/MemberPage';
 
 const PrivateRoute = ({ children }: { children: React.JSX.Element }) => {
   const { user, isLoading } = useAuth();
@@ -85,6 +86,11 @@ function App() {
             <Route path="users" element={
               <PrivateRoute>
                 <AccountMembersPage />
+              </PrivateRoute>} />
+
+            <Route path="users/:memberID" element={
+              <PrivateRoute>
+                <MemberPage />
               </PrivateRoute>} />
 
             <Route path="tests/:testID/passers" element={

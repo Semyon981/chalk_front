@@ -20,7 +20,7 @@ export default function AccountPage() {
     const { account, isLoading: isLoadingAccount, error: accountError } = useAccount(accountName);
     const { accounts } = useAccounts(user?.id || null);
     const { members, isLoading: isLoadingUsers, error: usersError, refetch: refetchMembers } = useAccountUsers(account?.id);
-    
+
     const [userRole, setUserRole] = useState<string | null>(null);
     const [isCheckingRole, setIsCheckingRole] = useState(true);
 
@@ -31,7 +31,7 @@ export default function AccountPage() {
             setIsCheckingRole(false);
         }
     }, [isLoadingAccount, isLoadingUsers, user, account, members]);
-    
+
     const tabs = [
         { id: 'users', label: 'Пользователи', path: 'users', roles: ['owner', 'admin', 'member'] },
         { id: 'courses', label: 'Курсы', path: 'courses', roles: ['owner', 'admin'] },
@@ -67,7 +67,7 @@ export default function AccountPage() {
                         variant="ghost"
                         className="mt-4"
                         onClick={() => navigate('/')}
-                        >
+                    >
                         Вернуться на главную
                     </Button>
                 </div>
@@ -135,7 +135,7 @@ export default function AccountPage() {
                 </div>
             </header>
 
-            <div className="container pt-20 mx-auto px-4 py-8">
+            <div className="pt-20 mx-auto py-8">
                 <motion.div
                     key={location.pathname}
                     initial={{ opacity: 0, y: 10 }}
@@ -143,7 +143,7 @@ export default function AccountPage() {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
                 >
-                    <Outlet context={{account, members, refetchMembers}} />
+                    <Outlet context={{ account, members, refetchMembers }} />
                 </motion.div>
             </div>
         </div>

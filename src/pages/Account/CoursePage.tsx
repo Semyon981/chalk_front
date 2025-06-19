@@ -6,11 +6,19 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useCourse } from '@/hooks/useCourse';
 import { useModules } from '@/hooks/useModules';
 import { useLessons } from '@/hooks/useLessons';
+import { useCourseParticipants } from '@/hooks/useCourseParticipants';
 import { useAuth } from '@/context/AuthContext';
 import { type Account } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { type Module, type Lesson, type AccountMember } from '@/api/types';
-import { ChevronLeft, GripVertical, X, Edit, Check, Trash } from 'lucide-react';
+import { ChevronLeft, GripVertical, X, Edit, Check, Trash, Pencil, ArrowLeft, Users, UserRoundPlus } from 'lucide-react';
+import { ConfirmModal } from '@/components/ConfirmModal';
+
+// import UsersListModal from "@/components/UsersListModal';
+import { UsersListModal } from "@/components/UsersListModal"
+
+import { Avatar } from '@/components/Avatar';
+import { unenrollUser, enrollUser, getCourseParticipants } from '@/api/courses';
 import {
     DndContext,
     closestCenter,
@@ -20,9 +28,7 @@ import {
     useSensors,
     type DragEndEvent,
 } from '@dnd-kit/core';
-
 import { arrayMove } from '@dnd-kit/sortable';
-
 import {
     SortableContext,
     useSortable,
@@ -30,7 +36,6 @@ import {
     sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-
 import {
     createModule,
     updateModule,
@@ -43,6 +48,10 @@ import {
     removeLesson,
     setLessonPosition,
 } from '@/api/lessons';
+import {
+    removeCourse,
+    updateCourse,
+} from '@/api/courses';
 import React from 'react';
 import { getUserRoleInAccount } from '@/lib/utils';
 
@@ -57,7 +66,12 @@ function CoursePage() {
     const numericCourseId = parseInt(courseId || '0', 10);
     const navigate = useNavigate();
 
+    const [confirmConfig, setConfirmConfig] = useState<{ isOpen: boolean; message: string; onConfirm: () => void; }>({ isOpen: false, message: '', onConfirm: () => { } });
+
+    const [isUsersListOpen, setIsUsersListOpen] = useState(false);
+
     const [isEditMode, setIsEditMode] = useState(false);
+    const [showMembersPanel, setShowMembersPanel] = useState(false);
 
     useEffect(() => {
         if (user && account && members) {
@@ -68,25 +82,14 @@ function CoursePage() {
     }, [user, account, members]);
 
 
-    const {
-        course,
-        isLoading: isLoadingCourse,
-        error: courseError,
-    } = useCourse(numericCourseId);
+    const { members: participants, isLoading: isLoadingParticipants, error: participantsError, refetch: refetchParticipants } = useCourseParticipants(numericCourseId);
 
-    const {
-        modules: initialModules,
-        isLoading: isLoadingModules,
-        error: modulesError,
-        refetch: refetchModules,
-    } = useModules(numericCourseId);
-
+    const { course, isLoading: isLoadingCourse, error: courseError } = useCourse(numericCourseId);
+    const { modules: initialModules, isLoading: isLoadingModules, error: modulesError, refetch: refetchModules } = useModules(numericCourseId);
     const [modules, setModules] = useState<Module[]>([]);
     const sensors = useSensors(
         useSensor(PointerSensor),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
 
     useEffect(() => {
@@ -96,35 +99,51 @@ function CoursePage() {
     const handleDragModule = async (event: DragEndEvent) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
-
         const oldIndex = modules.findIndex((m) => m.id === active.id);
         const newIndex = modules.findIndex((m) => m.id === over.id);
         const newModules = arrayMove(modules, oldIndex, newIndex);
-
         setModules(newModules);
-
         try {
-            await setModulePosition({
-                id: Number(active.id),
-                order_idx: newIndex,
-            });
+            await setModulePosition({ id: Number(active.id), order_idx: newIndex });
             await refetchModules();
-        } catch (error) {
+        } catch {
             setModules(initialModules || []);
         }
     };
 
     const handleAddModule = async (position: number) => {
         try {
-            await createModule({
-                course_id: numericCourseId,
-                name: 'Новый модуль',
-                order_idx: position,
-            });
+            await createModule({ course_id: numericCourseId, name: 'Новый модуль', order_idx: position });
             await refetchModules();
         } catch (error) {
             console.error('Failed to create module:', error);
         }
+    };
+
+    const handleRemoveCourse = async () => {
+        setConfirmConfig({
+            isOpen: true,
+            message: `Вы действительно хотите удалить курс \"${course?.name}\"?`,
+            onConfirm: async () => { await removeCourse({ id: numericCourseId }); navigate(-1); }
+        });
+    };
+
+    const handleRemoveModule = async (moduleID: number, moduleName: string) => {
+        setConfirmConfig({
+            isOpen: true,
+            message: `Вы действительно хотите удалить модуль \"${moduleName}\"?`,
+            onConfirm: async () => { await removeModule({ id: moduleID }); await refetchModules(); }
+        });
+    };
+
+    const handleEnroll = async (userId: number) => {
+        await enrollUser({ id: numericCourseId, user_id: userId });
+        refetchParticipants()
+    };
+
+    const handleUnenroll = async (userId: number) => {
+        await unenrollUser({ id: numericCourseId, user_id: userId });
+        refetchParticipants()
     };
 
     if (courseError) {
@@ -132,117 +151,164 @@ function CoursePage() {
             <div className="text-red-400 p-8">
                 {courseError}
                 <div className="mt-4">
-                    <Button variant="ghost">
-                        <Link to={`/accounts/${account.name}/c`}>Вернуться к курсам</Link>
-                    </Button>
+                    <Button variant="ghost"><Link to={`/accounts/${account.name}/c`}>Вернуться к курсам</Link></Button>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-2">
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <Button
-                        variant="ghost"
-                        className="rounded-full"
-                        onClick={() => navigate(-1)}
-                    >
-                        <ChevronLeft className="h-5 w-5" />
-                    </Button>
-
-                    {isLoadingCourse ? (
-                        <Skeleton className="h-8 w-48" />
-                    ) : (
-                        <motion.h1
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="text-3xl font-bold text-gray-100"
-                        >
-                            {course?.name}
-                        </motion.h1>
+        <div className="flex h-full px-25">
+            {/* Main Content with animated width */}
+            <motion.div
+                className="space-y-2"
+                initial={{ width: '100%' }}
+                // animate={{ width: showMembersPanel ? '100%' : '100%' }}
+                transition={{ duration: 1 }}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => navigate(-1)} className="text-gray-100 hover:text-white cursor-pointer">
+                            <ArrowLeft className="h-8 w-8" />
+                        </button>
+                        {isLoadingCourse ? (
+                            <Skeleton className="h-8 w-48" />
+                        ) : (
+                            <motion.h1
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="text-3xl font-bold text-gray-100"
+                            >
+                                {course?.name}
+                            </motion.h1>
+                        )}
+                    </div>
+                    {!isCheckingRole && (userRole === 'admin' || userRole === 'owner') && (
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setIsEditMode(prev => !prev)} className={`${isEditMode ? 'bg-white text-gray-900 hover:bg-gray-300' : 'text-white hover:text-cgray-50'} p-2 rounded-full transition-colors cursor-pointer`}>
+                                {isEditMode ? <Check size={25} /> : <Pencil size={25} />}
+                            </button>
+                            <button onClick={handleRemoveCourse} className="text-red-500 hover:text-red-400 p-2 rounded-full cursor-pointer">
+                                <Trash size={25} />
+                            </button>
+                            <button onClick={() => setShowMembersPanel(prev => !prev)} className="cursor-pointer p-2 rounded-full border-2 border-white hover:border-cgray-50 text-white hover:text-cgray-50 transition-colors duration-100">
+                                <Users size={25} />
+                            </button>
+                        </div>
                     )}
                 </div>
 
-                {!isCheckingRole && (userRole == 'admin' || userRole === 'owner') &&
-                    <Button
-                        variant={isEditMode ? 'light' : 'ghost'}
-                        onClick={() => setIsEditMode((prev) => !prev)}
-                        className="flex items-center gap-2 h-10 px-4 min-w-[120px]"
-                    >
-                        {isEditMode ? <Check /> : <Edit />}
-                        <span>{isEditMode ? 'Сохранить' : 'Редактировать'}</span>
-                    </Button>
-                }
-            </div>
+                {/* Modules list */}
+                {modulesError && <div className="text-red-400 p-8">{modulesError}</div>}
+                <div className="space-y-0">
+                    {isLoadingModules ? (
+                        Array.from({ length: 3 }).map((_, idx) => <Skeleton key={idx} className="h-20 w-full rounded-lg" />)
+                    ) : (
+                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragModule}>
+                            <SortableContext items={modules} strategy={verticalListSortingStrategy}>
+                                <div className="relative h-5">
+                                    {isEditMode && (
+                                        <div onClick={() => handleAddModule(0)} className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                                            <div className="flex-1 h-0.5 bg-white rounded-full" />
+                                        </div>
+                                    )}
+                                </div>
+                                {modules.map((module, index) => (
+                                    <React.Fragment key={module.id}>
+                                        <SortableModule
+                                            isEditMode={isEditMode}
+                                            module={module}
+                                            accountName={account.name}
+                                            courseId={numericCourseId}
+                                            onDelete={() => handleRemoveModule(module.id, module.name)}
+                                            onUpdate={async name => { await updateModule({ id: module.id, name }); await refetchModules(); }}
+                                            setConfirmConfig={setConfirmConfig}
+                                        />
+                                        <div className="relative h-5">
+                                            {isEditMode && (
+                                                <div onClick={() => handleAddModule(index + 1)} className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                                                    <div className="flex-1 h-0.5 bg-white rounded-full" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </React.Fragment>
+                                ))}
+                            </SortableContext>
+                        </DndContext>
+                    )}
+                </div>
+            </motion.div>
 
-            {modulesError && <div className="text-red-400 p-8">{modulesError}</div>}
+            {/* Members Panel with animated width */}
+            <motion.aside
+                className={`bg-cgray-900 ${showMembersPanel ? "pl-4 m-4" : ""} overflow-auto border-l border-cgray-700`}
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: showMembersPanel ? '40%' : 0, opacity: showMembersPanel ? 1 : 0 }}
+                transition={{ duration: 0.15 }}
+                style={{ overflow: 'hidden' }}
+            >
+                {showMembersPanel && (
+                    <>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-semibold text-gray-100 text-nowrap">
+                                Проходят курс
+                            </h3>
+                            <button
+                                onClick={() => { setIsUsersListOpen(true) }}
+                                className="px-1 py-1 text-white hover:text-cgray-100 rounded-full transition-colors cursor-pointer"
+                            >
+                                <UserRoundPlus />
+                            </button>
+                        </div>
+                        <ul className="space-y-2">
+                            {participants.map(member => (
+                                <div
+                                    key={member.user.id}
+                                    className="flex justify-between items-center p-2 bg-cgray-700 rounded-lg transition-colors hover:bg-cgray-600"
+                                >
+                                    <div className="flex gap-2 items-center">
+                                        <Avatar name={member.user.name} size="sm" />
+                                        <div className="text-cgray-100 flex flex-col">
+                                            <span className="font-small">{member.user.name}</span>
+                                            {/* <span className="text-cgray-400 text-sm">{member.user.email}</span> */}
+                                        </div>
+                                    </div>
 
-            <div className="space-y-0">
-                {isLoadingModules ? (
-                    Array.from({ length: 3 }).map((_, idx) => (
-                        <Skeleton key={idx} className="h-20 w-full rounded-lg" />
-                    ))
-                ) : (
-                    <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={handleDragModule}
-                    >
-                        <SortableContext
-                            items={modules}
-                            strategy={verticalListSortingStrategy}
-                        >
-                            <div className="relative h-5">
-                                {isEditMode &&
-                                    <div
-                                        className={`absolute inset-0 flex items-center justify-center ${!isLoadingModules && modules.length === 0
-                                            ? 'opacity-100 animate-pulse'
-                                            : 'opacity-0 hover:opacity-100 transition-opacity'
-                                            } cursor-pointer`}
-                                        onClick={() => handleAddModule(0)}
+                                    <button
+                                        onClick={() => handleUnenroll(member.user.id)}
+                                        className="text-red-500 hover:text-red-400 p-1 transition-colors cursor-pointer"
+                                        aria-label="Удалить участника"
                                     >
-                                        <div className="flex-1 h-0.5 bg-white rounded-full" />
-                                    </div>
-                                }
-                            </div>
-
-                            {modules.map((module, index) => (
-                                <React.Fragment key={module.id}>
-                                    <SortableModule
-                                        isEditMode={isEditMode}
-                                        module={module}
-                                        accountName={account.name}
-                                        courseId={numericCourseId}
-                                        onDelete={async () => {
-                                            await removeModule({ id: module.id });
-                                            await refetchModules();
-                                        }}
-                                        onUpdate={async (name: string) => {
-                                            await updateModule({ id: module.id, name });
-                                            await refetchModules();
-                                        }}
-                                    />
-                                    <div className="relative h-5">
-                                        {isEditMode &&
-                                            <div
-                                                className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-                                                onClick={() => handleAddModule(index + 1)}
-                                            >
-                                                <div className="flex-1 h-0.5 bg-white rounded-full" />
-                                            </div>
-                                        }
-                                    </div>
-                                </React.Fragment>
+                                        <Trash size={18} />
+                                    </button>
+                                </div>
                             ))}
-                        </SortableContext>
-                    </DndContext>
+                        </ul>
+                    </>
                 )}
-            </div>
+            </motion.aside>
+
+
+            {/* Modals */}
+
+            <ConfirmModal
+                isOpen={confirmConfig.isOpen}
+                message={confirmConfig.message}
+                onConfirm={async () => { await confirmConfig.onConfirm(); setConfirmConfig(prev => ({ ...prev, isOpen: false })); }}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            />
+
+            <UsersListModal
+                isOpen={isUsersListOpen}
+                availableMembers={members.filter(m => !participants.some(p => p.user.id === m.user.id))}
+                onClose={() => setIsUsersListOpen(false)}
+                onClick={async (memberId) => { await handleEnroll(memberId); setIsUsersListOpen(false); }}
+            />
         </div>
     );
 }
+
 
 function SortableModule({
     module,
@@ -250,7 +316,8 @@ function SortableModule({
     courseId,
     onDelete,
     onUpdate,
-    isEditMode
+    isEditMode,
+    setConfirmConfig
 }: {
     module: Module;
     accountName: string;
@@ -258,6 +325,11 @@ function SortableModule({
     onDelete: () => void;
     onUpdate: (name: string) => void;
     isEditMode: boolean;
+    setConfirmConfig: React.Dispatch<React.SetStateAction<{
+        isOpen: boolean;
+        message: string;
+        onConfirm: () => void;
+    }>>
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
         useSortable({ id: module.id });
@@ -278,6 +350,7 @@ function SortableModule({
                 dragListeners={listeners}
                 onDelete={onDelete}
                 onUpdate={onUpdate}
+                setConfirmConfig={setConfirmConfig}
             />
         </div>
     );
@@ -292,6 +365,7 @@ function ModuleSection({
     onDelete,
     onUpdate,
     isEditMode,
+    setConfirmConfig
 }: {
     module: Module;
     accountName: string;
@@ -301,6 +375,11 @@ function ModuleSection({
     onDelete: () => void;
     onUpdate: (name: string) => void;
     isEditMode: boolean;
+    setConfirmConfig: React.Dispatch<React.SetStateAction<{
+        isOpen: boolean;
+        message: string;
+        onConfirm: () => void;
+    }>>
 }) {
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState(module.name);
@@ -359,7 +438,7 @@ function ModuleSection({
                     )}
                 </div>
 
-                <LessonsList module={module} courseId={courseId} accountName={accountName} isEditMode={isEditMode} />
+                <LessonsList module={module} courseId={courseId} accountName={accountName} isEditMode={isEditMode} setConfirmConfig={setConfirmConfig} />
             </motion.div>
         </div>
     );
@@ -370,11 +449,17 @@ function LessonsList({
     courseId,
     accountName,
     isEditMode,
+    setConfirmConfig
 }: {
     module: Module;
     courseId: number;
     accountName: string;
     isEditMode: boolean;
+    setConfirmConfig: React.Dispatch<React.SetStateAction<{
+        isOpen: boolean;
+        message: string;
+        onConfirm: () => void;
+    }>>
 }) {
     const {
         lessons: initialLessons,
@@ -386,6 +471,17 @@ function LessonsList({
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
+
+    const handleRemoveLesson = async (lessonID: number, lessonName: string) => {
+        setConfirmConfig({
+            isOpen: true,
+            message: `Вы действительно хотите удалить урок "${lessonName}?"`,
+            onConfirm: async () => {
+                await removeLesson({ id: lessonID });
+                await refetchLessons();
+            },
+        });
+    }
 
     useEffect(() => {
         if (initialLessons) setLessons(initialLessons);
@@ -449,13 +545,13 @@ function LessonsList({
                                         accountName={accountName}
                                         courseId={courseId}
                                         onDelete={async () => {
-                                            await removeLesson({ id: lesson.id });
-                                            await refetchLessons();
+                                            handleRemoveLesson(lesson.id, lesson.name)
                                         }}
                                         onUpdate={async (name: string) => {
                                             await updateLesson({ id: lesson.id, name });
                                             await refetchLessons();
                                         }}
+
                                     />
                                     <div className="relative h-4">
                                         {isEditMode &&

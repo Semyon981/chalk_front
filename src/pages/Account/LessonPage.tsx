@@ -8,7 +8,9 @@ import { useBlocks } from '@/hooks/useBlocks';
 import { type Account, type BlockType, type TestQuestion, type TestQuestionAnswer, type UpdateBlockRequest } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { type Block, type AccountMember } from '@/api/types';
-import { ChevronLeft, GripVertical, X, Edit, Check, Upload, Video, Text, Trash, SquareGanttChartIcon, Pencil, Plus, ChevronRight } from 'lucide-react';
+import { ConfirmModal } from '@/components/ConfirmModal';
+import { removeLesson } from '@/api/lessons';
+import { ChevronLeft, GripVertical, X, Edit, Check, Upload, Video, Text, Trash, SquareGanttChartIcon, Pencil, Plus, ChevronRight, ArrowLeft } from 'lucide-react';
 import {
     DndContext,
     closestCenter,
@@ -137,6 +139,16 @@ export default function LessonPage() {
         setShowPopup(true);
     };
 
+    const [confirmConfig, setConfirmConfig] = useState<{ isOpen: boolean; message: string; onConfirm: () => void; }>({ isOpen: false, message: '', onConfirm: () => { } });
+
+    const handleRemoveLesson = async (lessonID: number, lessonName: string) => {
+        setConfirmConfig({
+            isOpen: true,
+            message: `Вы действительно хотите удалить урок \"${lessonName}\"?`,
+            onConfirm: async () => { await removeLesson({ id: lessonID }); navigate(-1); }
+        });
+    }
+
     if (lessonError) {
         return (
             <div className="text-red-400 p-8">
@@ -157,16 +169,15 @@ export default function LessonPage() {
         : blocks;
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-2 px-25">
             <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <Button
-                        variant="ghost"
-                        className="rounded-full"
+                    <button
+                        className=" text-gray-100 hover:text-white cursor-pointer"
                         onClick={() => navigate(-1)}
                     >
-                        <ChevronLeft className="h-5 w-5" />
-                    </Button>
+                        <ArrowLeft className="h-8 w-8" />
+                    </button>
                     {isLoadingLesson ? (
                         <Skeleton className="h-8 w-48" />
                     ) : (
@@ -180,14 +191,26 @@ export default function LessonPage() {
                     )}
                 </div>
                 {!isCheckingRole && (userRole == 'admin' || userRole === 'owner') &&
-                    <Button
-                        variant={isEditMode ? 'light' : 'ghost'}
-                        onClick={() => setIsEditMode((prev) => !prev)}
-                        className="flex items-center gap-2 h-10 px-4 min-w-[120px]"
-                    >
-                        {isEditMode ? <Check /> : <Edit />}
-                        <span>{isEditMode ? 'Сохранить' : 'Редактировать'}</span>
-                    </Button>
+                    // <Button
+                    //     variant={isEditMode ? 'light' : 'ghost'}
+                    //     onClick={() => setIsEditMode((prev) => !prev)}
+                    //     className="flex items-center gap-2 h-10 px-4 min-w-[120px]"
+                    // >
+                    //     {isEditMode ? <Check /> : <Edit />}
+                    //     <span>{isEditMode ? 'Сохранить' : 'Редактировать'}</span>
+                    // </Button>
+
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => setIsEditMode(prev => !prev)} className={`${isEditMode ? 'bg-white text-gray-900 hover:bg-gray-300' : 'text-white hover:text-cgray-50'} p-2 rounded-full transition-colors cursor-pointer`}>
+                            {isEditMode ? <Check size={25} /> : <Pencil size={25} />}
+                        </button>
+                        <button onClick={() => { { lesson && handleRemoveLesson(lesson?.id, lesson?.name) } }} className="text-red-500 hover:text-red-400 p-2 rounded-full cursor-pointer">
+                            <Trash size={25} />
+                        </button>
+                        {/* <button onClick={() => setShowMembersPanel(prev => !prev)} className="cursor-pointer p-2 rounded-full border-2 border-white hover:border-cgray-50 text-white hover:text-cgray-50 transition-colors duration-100">
+                            <Users size={25} />
+                        </button> */}
+                    </div>
                 }
             </div>
 
@@ -270,6 +293,16 @@ export default function LessonPage() {
                     }}
                 />
             )}
+
+            {/* Modals */}
+            <ConfirmModal
+                isOpen={confirmConfig.isOpen}
+                message={confirmConfig.message}
+                onConfirm={async () => { await confirmConfig.onConfirm(); setConfirmConfig(prev => ({ ...prev, isOpen: false })); }}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            />
+
+
         </div>
     );
 }
