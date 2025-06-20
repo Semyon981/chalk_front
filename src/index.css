@@ -113,15 +113,18 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: #2d3748; /* bg-gray-800 */
+    background: #111111;
+    /* bg-gray-800 */
     border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #4a5568; /* bg-gray-600 */
+    background: #3b3b3b;
+    /* bg-gray-600 */
     border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #718096; /* bg-gray-500 */
+    background: #585858;
+    /* bg-gray-500 */
 }

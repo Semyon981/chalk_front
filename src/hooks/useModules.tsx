@@ -10,6 +10,7 @@ export function useModules(courseId: number) {
     const refetch = async () => {
         try {
             const response = await getModulesByCourseID(courseId);
+            setError(null)
             setModules(response.data.modules);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Ошибка загрузки модулей');

@@ -240,26 +240,26 @@ export default function LessonPage() {
                     </motion.h1>
                 )}
 
+                {!isCheckingRole && userRole !== 'member' && (
+                    <div className="flex ml-auto items-center">
+                        <div className={`fixed z-40 transition-transform duration-300 origin-center gap-2 flex ${scrolled ? '-rotate-90 translate-y-1/2 translate-x-2' : '-translate-x-2/2'}`}>
 
-                <div className="flex ml-auto items-center">
-                    <div className={`fixed z-40 transition-transform duration-300 origin-center gap-2 flex ${scrolled ? '-rotate-90 translate-y-1/2 translate-x-2' : '-translate-x-2/2'}`}>
+                            <button
+                                onClick={() => setIsEditMode(prev => !prev)}
+                                className={`${scrolled ? 'rotate-90' : ''} ${isEditMode ? 'bg-white text-black' : 'text-white hover:text-cgray-50'} flex items-center justify-center cursor-pointer h-10 w-10 rounded-full transition-transform-colors duration-300`}
+                            >
+                                <Pencil size={25} />
+                            </button>
 
-                        <button
-                            onClick={() => setIsEditMode(prev => !prev)}
-                            className={`${scrolled ? 'rotate-90' : ''} ${isEditMode ? 'bg-white text-black' : 'text-white hover:text-cgray-50'} flex items-center justify-center cursor-pointer h-10 w-10 rounded-full transition-transform-colors duration-300`}
-                        >
-                            <Pencil size={25} />
-                        </button>
-
-                        <button
-                            onClick={() => lesson && handleRemoveLesson(lesson.id, lesson.name)}
-                            className={`text-red-500 transition-transform-colors duration-300 hover:text-red-400 ${scrolled ? 'rotate-90' : ''} p-2 rounded-full cursor-pointer`}
-                        >
-                            <Trash size={25} />
-                        </button>
+                            <button
+                                onClick={() => lesson && handleRemoveLesson(lesson.id, lesson.name)}
+                                className={`text-red-500 transition-transform-colors duration-300 hover:text-red-400 ${scrolled ? 'rotate-90' : ''} p-2 rounded-full cursor-pointer`}
+                            >
+                                <Trash size={25} />
+                            </button>
+                        </div>
                     </div>
-                </div>
-
+                )}
             </div>
 
             {/* Основной контент */}
@@ -302,50 +302,42 @@ export default function LessonPage() {
                                 </div>
 
                                 {visibleBlocks.map((block, index) => (
-                                    <motion.div
-                                        key={block.id}
-                                        layout
-                                        initial={{ opacity: 0, x: -500 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -500 }}
-                                        transition={{ duration: 0.05 }}
-                                    >
-                                        <React.Fragment key={block.id}>
-                                            <SortableBlock
-                                                block={block}
-                                                isEditMode={isEditMode}
-                                                onDelete={async () => {
-                                                    await removeBlock({ id: block.id });
-                                                    await refetchBlocks();
-                                                }}
-                                                onUpdate={async (
-                                                    payload: UpdateBlockRequest
-                                                ) => {
-                                                    await updateBlock(payload);
-                                                    await refetchBlocks();
-                                                }}
-                                            // onFileUpload={async (file: File) => {
-                                            //     const resp = await uploadFile(file);
-                                            //     return resp.data.id;
-                                            // }}
-                                            />
-                                            <div className="relative h-5">
-                                                {isEditMode && (
-                                                    <div
-                                                        className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-                                                        onClick={(e) =>
-                                                            handleLineClick(
-                                                                e,
-                                                                index + 1
-                                                            )
-                                                        }
-                                                    >
-                                                        <div className="flex-1 h-0.5 bg-white rounded-full" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </React.Fragment>
-                                    </motion.div>
+                                    <React.Fragment key={block.id}>
+                                        <SortableBlock
+                                            block={block}
+                                            isEditMode={isEditMode}
+                                            onDelete={async () => {
+                                                await removeBlock({ id: block.id });
+                                                await refetchBlocks();
+                                            }}
+                                            onUpdate={async (
+                                                payload: UpdateBlockRequest
+                                            ) => {
+                                                await updateBlock(payload);
+                                                await refetchBlocks();
+                                            }}
+                                        // onFileUpload={async (file: File) => {
+                                        //     const resp = await uploadFile(file);
+                                        //     return resp.data.id;
+                                        // }}
+                                        />
+                                        <div className="relative h-5">
+                                            {isEditMode && (
+                                                <div
+                                                    className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                                                    onClick={(e) =>
+                                                        handleLineClick(
+                                                            e,
+                                                            index + 1
+                                                        )
+                                                    }
+                                                >
+                                                    <div className="flex-1 h-0.5 bg-white rounded-full" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </React.Fragment>
+
                                 ))}
                             </SortableContext>
                         </DndContext>
@@ -479,6 +471,7 @@ function SortableBlock({
                 dragListeners={listeners}
                 onDelete={onDelete}
                 onUpdate={onUpdate}
+                isDragging={isDragging}
             // onFileUpload={onFileUpload}
             />
         </div>
@@ -493,6 +486,7 @@ function BlockSection({
     onUpdate,
     // onFileUpload,
     isEditMode,
+    isDragging
 }: {
     block: Block;
     dragAttributes: any;
@@ -500,39 +494,49 @@ function BlockSection({
     onDelete: () => void;
     onUpdate: (payload: UpdateBlockRequest) => void;
     isEditMode: boolean;
+    isDragging: boolean;
     // onFileUpload: (file: File) => Promise<number>;
 }) {
     return (
-        <div className="group relative z-11">
-            {block.type === "text" ? (
-                <TextBlock
-                    block={block}
-                    dragAttributes={dragAttributes}
-                    dragListeners={dragListeners}
-                    onDelete={onDelete}
-                    onUpdate={onUpdate}
-                    isEditMode={isEditMode}
-                />
-            ) : block.type === "video" ? (
-                <VideoBlock
-                    block={block}
-                    dragAttributes={dragAttributes}
-                    dragListeners={dragListeners}
-                    onDelete={onDelete}
-                    onUpdate={onUpdate}
-                    isEditMode={isEditMode}
-                />
-            ) : block.type === "test" ? (
-                <TestBlock
-                    block={block}
-                    dragAttributes={dragAttributes}
-                    dragListeners={dragListeners}
-                    onDelete={onDelete}
-                    onUpdate={onUpdate}
-                    isEditMode={isEditMode}
-                />
-            ) : null}
-        </div>
+        <motion.div
+            key={block.id}
+            layout
+            initial={{ opacity: 0, x: -500 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -500 }}
+            transition={{ duration: isDragging ? 0 : 0.05 }}
+        >
+            <div className="group relative z-11">
+                {block.type === "text" ? (
+                    <TextBlock
+                        block={block}
+                        dragAttributes={dragAttributes}
+                        dragListeners={dragListeners}
+                        onDelete={onDelete}
+                        onUpdate={onUpdate}
+                        isEditMode={isEditMode}
+                    />
+                ) : block.type === "video" ? (
+                    <VideoBlock
+                        block={block}
+                        dragAttributes={dragAttributes}
+                        dragListeners={dragListeners}
+                        onDelete={onDelete}
+                        onUpdate={onUpdate}
+                        isEditMode={isEditMode}
+                    />
+                ) : block.type === "test" ? (
+                    <TestBlock
+                        block={block}
+                        dragAttributes={dragAttributes}
+                        dragListeners={dragListeners}
+                        onDelete={onDelete}
+                        onUpdate={onUpdate}
+                        isEditMode={isEditMode}
+                    />
+                ) : null}
+            </div>
+        </motion.div>
     );
 }
 

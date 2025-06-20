@@ -10,6 +10,7 @@ export function useBlocks(lessonId: number) {
     const refetch = async () => {
         try {
             const response = await getBlocksByLessonID(lessonId);
+            setError(null)
             setBlocks(response.data.blocks);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Ошибка загрузки блоков');

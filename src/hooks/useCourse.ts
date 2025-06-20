@@ -11,6 +11,7 @@ export function useCourse(courseId: number) {
         const fetchCourse = async () => {
             try {
                 const response = await getCourseByID(courseId);
+                setError(null)
                 setCourse(response.data.course);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Ошибка загрузки курса');

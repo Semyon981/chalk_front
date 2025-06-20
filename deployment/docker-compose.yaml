@@ -1,0 +1,10 @@
+services:
+
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../dist:/...
+

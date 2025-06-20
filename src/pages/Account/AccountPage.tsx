@@ -100,7 +100,7 @@ export default function AccountPage() {
                                         key={tab.id}
                                         to={to}
                                         className={`
-                                relative px-3 py-2 text-sm rounded-md transition-colors
+                                relative px-3 py-2 text-2sm rounded-md transition-colors
                                 ${isActive
                                                 ? 'text-white bg-cgray-700'
                                                 : 'text-cgray-200 hover:bg-cgray-500/40'
@@ -135,7 +135,7 @@ export default function AccountPage() {
                 </div>
             </header>
 
-            <div className="pt-20 mx-auto py-8">
+            <div className="pt-20 mx-auto py-8 overflow-hidden min-h-screen">
                 <motion.div
                     key={location.pathname}
                     initial={{ opacity: 0, y: 10 }}

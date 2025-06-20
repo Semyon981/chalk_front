@@ -16,6 +16,7 @@ export default function useAccountMemberCourses(
     const loadCourses = async () => {
       try {
         const response = await getMemberCourses(accountId, memberId);
+        setError(null)
         setCourses(response.data.courses);
       } catch (err) {
         setError('Ошибка загрузки курсов');

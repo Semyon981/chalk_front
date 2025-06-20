@@ -10,6 +10,7 @@ export function useLesson(lessonId: number) {
      const refetch = async () => {
         try {
             const response = await getLessonByID(lessonId);
+            setError(null)
             setLesson(response.data.lesson);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Ошибка загрузки уроков');

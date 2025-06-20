@@ -10,6 +10,7 @@ export function useAccountCourses(accountId: number) {
   const refreshCourses = async () => {
     try {
         const response = await getAccountCourses(accountId);
+        setError(null)
         setCourses(response.data.courses);
     } catch (err) {
       setError('Не удалось загрузить курсы');

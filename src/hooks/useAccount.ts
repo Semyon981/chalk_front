@@ -16,6 +16,7 @@ export default function useAccount(accountName?: string) {
     const fetchAccount = async () => {
       try {
         const response = await getAccountByName(accountName);
+        setError(null)
         setAccount(response.data.account);
       } catch (err) {
         setError('Аккаунт не найден или нет доступа');

@@ -12,6 +12,7 @@ export function useTest(testId: number) {
     setLoading(true);
     try {
       const resp = await getTestInfo(testId);
+      setError(null)
       setTest(resp.data.test);
     } catch (err: any) {
       setError(err.message || 'Failed to load test');

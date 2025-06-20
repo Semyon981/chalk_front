@@ -205,31 +205,33 @@ function CoursePage() {
                     </motion.h1>
                 )}
 
-                <div className="flex ml-auto items-center">
-                    <div className={`fixed z-40 transition-transform duration-300 origin-center flex items-center gap-2 ${scrolled ? '-rotate-90 translate-y-2/2 -translate-x-4' : '-translate-x-2/2'}`}>
-                        <button
-                            onClick={() => setIsEditMode(prev => !prev)}
-                            className={`${scrolled ? 'rotate-90' : ''} ${isEditMode ? 'bg-white text-black' : 'text-white hover:text-cgray-50'} flex items-center justify-center cursor-pointer h-10 w-10 rounded-full transition-transform-colors duration-300`}
-                        >
-                            <Pencil size={25} />
-                        </button>
+                {!isCheckingRole && userRole !== 'member' && (
+                    <div className="flex ml-auto items-center">
+                        <div className={`fixed z-40 transition-transform duration-300 origin-center flex items-center gap-2 ${scrolled ? '-rotate-90 translate-y-2/2 -translate-x-4' : '-translate-x-2/2'}`}>
+                            <button
+                                onClick={() => setIsEditMode(prev => !prev)}
+                                className={`${scrolled ? 'rotate-90' : ''} ${isEditMode ? 'bg-white text-black' : 'text-white hover:text-cgray-50'} flex items-center justify-center cursor-pointer h-10 w-10 rounded-full transition-transform-colors duration-300`}
+                            >
+                                <Pencil size={25} />
+                            </button>
 
-                        <button
-                            onClick={() => setShowMembersPanel(prev => !prev)}
-                            className={`${scrolled ? 'rotate-90' : ''} ${showMembersPanel ? 'bg-white text-black' : 'text-white hover:text-cgray-50'} flex items-center justify-center cursor-pointer h-10 w-10 rounded-full transition-transform-colors duration-300`}
-                        >
-                            <Users size={25} />
-                        </button>
+                            <button
+                                onClick={() => setShowMembersPanel(prev => !prev)}
+                                className={`${scrolled ? 'rotate-90' : ''} ${showMembersPanel ? 'bg-white text-black' : 'text-white hover:text-cgray-50'} flex items-center justify-center cursor-pointer h-10 w-10 rounded-full transition-transform-colors duration-300`}
+                            >
+                                <Users size={25} />
+                            </button>
 
-                        <button
-                            onClick={handleRemoveCourse}
-                            className={`text-red-500 transition-transform-colors duration-300 hover:text-red-400 ${scrolled ? 'rotate-90' : ''} p-2 rounded-full cursor-pointer`}
-                        >
-                            <Trash size={25} />
-                        </button>
+                            <button
+                                onClick={handleRemoveCourse}
+                                className={`text-red-500 transition-transform-colors duration-300 hover:text-red-400 ${scrolled ? 'rotate-90' : ''} p-2 rounded-full cursor-pointer`}
+                            >
+                                <Trash size={25} />
+                            </button>
 
+                        </div>
                     </div>
-                </div>
+                )}
 
 
 
@@ -256,7 +258,9 @@ function CoursePage() {
                                 <SortableContext items={modules} strategy={verticalListSortingStrategy}>
                                     <div className="relative h-5">
                                         {isEditMode && (
-                                            <div onClick={() => handleAddModule(0)} className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                                            <div onClick={() => handleAddModule(0)} className={`absolute inset-0 flex items-center justify-center ${!isLoadingCourse && modules.length === 0
+                                                ? 'opacity-100 animate-pulse'
+                                                : 'opacity-0 hover:opacity-100 transition-opacity'} cursor-pointer`}>
                                                 <div className="flex-1 h-0.5 bg-white rounded-full" />
                                             </div>
                                         )}

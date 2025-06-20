@@ -64,7 +64,7 @@ export function CreateCourseModal({ isOpen, accountId, onClose, onSuccess }: Pro
                                     message: 'Минимум 3 символа'
                                 }
                             })}
-                            className={`w-full p-2 border rounded ${errors.name ? 'border-red-500' : 'border-gray-300'
+                            className={`w-full outline-0 p-2 border rounded ${errors.name ? 'border-red-500' : 'border-gray-300'
                                 }`}
                         />
                         {errors.name && (
