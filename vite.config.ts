@@ -10,7 +10,8 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
-      port: 5173,
+      allowedHosts:["courso.ru"],
+      port: 80,
       host: '0.0.0.0',
   },
   resolve: {

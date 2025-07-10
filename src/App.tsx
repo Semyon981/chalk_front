@@ -104,16 +104,6 @@ function App() {
                 <AccountCoursesPage />
               </PrivateRoute>} />
 
-
-            {/* <Route path="courses/:courseId" element={
-              <PrivateRoute>
-                <CoursePage />
-              </PrivateRoute>
-            }>
-              <Route index element={<PrivateRoute><CoursePage /></PrivateRoute>} />
-              <Route path="lessons/:lessonId" element={<PrivateRoute><LessonPage /></PrivateRoute>} />
-            </Route> */}
-
             <Route path="courses/:courseId">
 
               <Route index element={
